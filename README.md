@@ -1,5 +1,7 @@
 # HxL
 
+- `npm i && npm run dev`
+
 # Spec info
 
 - `nuxt3`
@@ -14,3 +16,9 @@
 - CSS framework: `Tailwind` OR raw `css` OR `SCSS/Sass`
 - 
 
+# Inspis
+
+- [jazz computer](http://jazz.computer/)
+
+# Resources
+- [codedrops](https://tympanus.net/codrops/)
