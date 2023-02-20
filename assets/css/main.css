@@ -1,0 +1,19 @@
+body {
+  margin:0;
+}
+
+/* Hide scrollbars */
+html {
+  -ms-overflow-style: none; /* IE */
+  scrollbar-width: none;  /* Firefox */
+}
+html::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}
+
+canvas {
+  top:0;
+  left:0;
+  position:fixed;
+  z-index: 0;
+}
