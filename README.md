@@ -11,6 +11,11 @@
 - Libraries: `gsap`, `threejs`, `scrollama`
 - Global style in `assets/css/main.css`
 
+# Extra tools
+
+- https://www.npmjs.com/package/web-audio-analyser ??? probably down
+- find list of lib: https://github.com/willianjusten/awesome-audio-visualization#readme
+
 # Escoger
 
 - CSS framework: `Tailwind` OR raw `css` OR `SCSS/Sass`
@@ -22,3 +27,16 @@
 
 # Resources
 - [codedrops](https://tympanus.net/codrops/)
+
+# Efectos
+
+- cursor mask + cursor effect
+- GSAP reveal
+- Moving Text (left to right / reverse)
+- 
+- 
+
+# Help on visualising
+
+- blog from mattdesl [with frequency analysis](https://mattdesl.svbtle.com/audiograph)
+- 

@@ -25,6 +25,8 @@ function handleStepProgress(res) {
   scrollVal.value = res.progress;
 }
 
+
+
 onMounted(() => {
   scroller
     .setup({
