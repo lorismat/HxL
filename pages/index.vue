@@ -1,7 +1,7 @@
 <template>
   <div>
     <ScrollamaImplem />
-    <TheCanvas />
+    <TheCanvasMusic />
   </div>
 </template>
 

@@ -39,4 +39,4 @@
 # Help on visualising
 
 - blog from mattdesl [with frequency analysis](https://mattdesl.svbtle.com/audiograph)
-- 
+- this process [shared for audio viz](https://lusion.co/work/kaos-logo-generator)
