@@ -40,6 +40,7 @@
 
 - blog from mattdesl [with frequency analysis](https://mattdesl.svbtle.com/audiograph)
 - this process [shared for audio viz](https://lusion.co/work/kaos-logo-generator)
+- meyda too [here](https://www.visualcinnamon.com/2020/06/sony-music-data-art/#final-result-animated-poster)
 
 
 

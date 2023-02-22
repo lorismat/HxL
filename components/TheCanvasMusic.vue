@@ -38,8 +38,12 @@ function init() {
   canvas = document.getElementById("c1");
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
+  
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x123456);
+
+  renderer.alpha = true;
+
+  renderer.setClearColor(0x000000, 1.);
 
   camera.position.set(0,0,1000);
   camera.lookAt( scene.position );
@@ -60,6 +64,8 @@ function init() {
 
   // create shader material
   const material = new THREE.ShaderMaterial({
+    transparent:true,
+    side: THREE.DoubleSide,
     uniforms: {
       time: { value: 0 },
       resolution: { value: new THREE.Vector2() },
@@ -99,14 +105,20 @@ function init() {
         // float y = sin(st.x * 2. * 3.14 * 100. + time * 2.) * 4. / 10. + 0.5;
         // float y = sin(st.x * 2. * 3.14 * 10. * abs( fArray[ int(floor(store.y * size)) ]  ) + time * 2.) * 4. / 10. + 0.5;
 
-        float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( fArray[ int(floor(store.y * size)) ] * 500.  ), 1000., 12000.) * 0.00009 * 4. / 10. + 0.5;
+        float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) * 0.00009 * 4. / 10. + 0.5;
     
+        // y = st.x;
         float pct = plot(st,y);
         
-        vec3 col = vec3(1.);
-        col = (1.0-pct)*col+pct*vec3(0.071,0.204,0.337);
+        vec4 col = vec4(1.);
+        vec4 col2 = vec4(1.);
+        col = (1.0-pct)*col+pct*vec4(vec3(0.), 0.1);
+        col2 = (1.0-pct)*col2+pct*vec4(vec3(0.), 0.9);
 
-        gl_FragColor = vec4(col, 1.0);
+        // effect extra 1
+        clamp(abs( fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) > 2000. ? col = col : col = col2;
+
+        gl_FragColor = 1.-col;
       }
     `,
   });
@@ -141,7 +153,7 @@ function animate() {
 
     mesh.material.uniforms.fArray.value = minArray;
 
-    mesh.rotation.x += 0.001;
+    mesh.rotation.x += 0.001; 
     mesh.rotation.y += 0.001;
     mesh.rotation.z += 0.001;
 

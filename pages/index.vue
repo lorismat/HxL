@@ -11,12 +11,15 @@
       {{playerText}}
     </button>
 
+    <!--
+      b7 / 
+    -->
     <audio
       controls
       loop
       crossorigin="anonymous"
       id="audio"
-      src="sounds/5.mp3"
+      src="sounds/1.mp3"
     ></audio>
 
 
