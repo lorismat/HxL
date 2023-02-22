@@ -6,6 +6,11 @@
     
     <TheCanvasMusic />
 
+    
+    <button @click="triggerSound">
+      {{playerText}}
+    </button>
+
     <audio
       controls
       loop
@@ -38,9 +43,21 @@ const analyserDCMeter = useState('analyserDCMeter', () => {} );
 const analyserMeter = useState('analyserMeter', () => {} );
 const analyserFourier = useState('analyserFourier', () => {} ); 
 
+let audio;
+
+function triggerSound() {
+  if (playerText.value === 'play') {
+    playerText.value = 'pause';
+    audio.play();
+  } else {
+    playerText.value = 'play';
+    audio.pause();
+  }
+}
+
 onMounted(() => {
+  audio = document.querySelector('audio');
   const audioContext = new AudioContext();
-  // Select the Audio Element from the DOM
   const htmlAudioElement = document.getElementById("audio");
   // Create an "Audio Node" from the Audio Element
   const source = audioContext.createMediaElementSource(htmlAudioElement);
@@ -49,30 +66,31 @@ onMounted(() => {
   // hear it
   source.connect(audioContext.destination);
 
-  if (typeof Meyda === "undefined") {
-    console.log("Meyda could not be found! Have you included it?");
-  } else {
-    const analyzer = Meyda.createMeydaAnalyzer({
-      audioContext: audioContext,
-      source: source,
-      bufferSize: 512,
-      featureExtractors: ["powerSpectrum"],
-      callback: (features) => {
-        console.log(features);
+  const analyzer = Meyda.createMeydaAnalyzer({
+    audioContext: audioContext,
+    source: source,
+    bufferSize: 512,
+    featureExtractors: ["powerSpectrum"],
+    callback: (features) => {
+      console.log(features);
 
-        analyserFourier.value = features.powerSpectrum;
+      analyserFourier.value = features.powerSpectrum;
 
-      },
-    });
-    analyzer.start();
-  }
+    },
+  });
+  analyzer.start();
+
 
 })  
 
 </script>
 
 <style scoped>
+
 audio {
+  visibility: hidden;
+}
+button {
   position: fixed;
   top: 0;
   left: 0;
