@@ -40,3 +40,10 @@
 
 - blog from mattdesl [with frequency analysis](https://mattdesl.svbtle.com/audiograph)
 - this process [shared for audio viz](https://lusion.co/work/kaos-logo-generator)
+
+
+
+# Frequency/Music analyser libraries
+
+- [tone.js](https://tonejs.github.io/docs/14.7.77/Analyser) and the analyser
+- 

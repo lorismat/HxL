@@ -9,7 +9,6 @@ import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import * as Tone from 'tone';
 
 // tonejs 
 // all package
@@ -46,9 +45,9 @@ function init() {
   camera.lookAt( scene.position );
 
   // add controls
-  // const controls = new OrbitControls(camera, renderer.domElement);
-  // controls.maxDistance = 2000;
-  // controls.minDistance = 1000;
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.maxDistance = 2000;
+  controls.minDistance = 1000;
 
   // number of lines depends on frequency
   // check what we can get as information
@@ -100,7 +99,7 @@ function init() {
         // float y = sin(st.x * 2. * 3.14 * 100. + time * 2.) * 4. / 10. + 0.5;
         // float y = sin(st.x * 2. * 3.14 * 10. * abs( fArray[ int(floor(store.y * size)) ]  ) + time * 2.) * 4. / 10. + 0.5;
 
-        float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * abs( fArray[ int(floor(store.y * size)) ] * 100.  ) * 0.00008 * 4. / 10. + 0.5;
+        float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( fArray[ int(floor(store.y * size)) ] * 500.  ), 1000., 12000.) * 0.00009 * 4. / 10. + 0.5;
     
         float pct = plot(st,y);
         
@@ -131,14 +130,14 @@ function animate() {
 
   if (analyserFourier.value != undefined) {
 
-    const fArray = analyserFourier.value.getValue();
+    const fArray = analyserFourier.value;
     minArray = [];
 
-    for (let i = 0; i < fArray.length; i += 100) {
+    for (let i = 0; i < fArray.length; i += 1) {
       minArray.push(fArray[i]);
     }
 
-    console.log(minArray.length);
+    console.log(fArray.length);
 
     mesh.material.uniforms.fArray.value = minArray;
 
