@@ -1,3 +1,5 @@
+_current state here to test scrollama implementation_
+
 # HxL
 
 - `npm i && npm run dev`
@@ -19,7 +21,6 @@
 # Escoger
 
 - CSS framework: `Tailwind` OR raw `css` OR `SCSS/Sass`
-- 
 
 # Inspis
 
@@ -33,8 +34,6 @@
 - cursor mask + cursor effect
 - GSAP reveal
 - Moving Text (left to right / reverse)
-- 
-- 
 
 # Help on visualising
 
