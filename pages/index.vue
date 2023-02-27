@@ -45,6 +45,7 @@ const frequencyArraySize = useState('frequencyArraySize', () => Math.pow(2,13) )
 const analyserDCMeter = useState('analyserDCMeter', () => {} );
 const analyserMeter = useState('analyserMeter', () => {} );
 const analyserFourier = useState('analyserFourier', () => {} ); 
+const analyserCentroid = useState('analyserCentroid', () => {} );
 
 let audio;
 
@@ -73,11 +74,11 @@ onMounted(() => {
     audioContext: audioContext,
     source: source,
     bufferSize: 512,
-    featureExtractors: ["powerSpectrum"],
+    featureExtractors: ["powerSpectrum", "spectralCentroid"],
     callback: (features) => {
-      console.log(features);
 
       analyserFourier.value = features.powerSpectrum;
+      analyserCentroid.value = features.spectralCentroid;
 
     },
   });

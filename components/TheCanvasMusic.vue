@@ -23,6 +23,7 @@ const frequencyArraySize = useState('frequencyArraySize');
 const analyserDCMeter = useState('analyserDCMeter');
 const analyserMeter = useState('analyserMeter');
 const analyserFourier = useState('analyserFourier');
+const analyserCentroid = useState('analyserCentroid');
 
 let minArray = [0];
 
@@ -69,7 +70,8 @@ function init() {
     uniforms: {
       time: { value: 0 },
       resolution: { value: new THREE.Vector2() },
-      fArray: { value: new Float32Array(frequencyArraySize.value) }
+      fArray: { value: new Float32Array(frequencyArraySize.value) },
+      cArray: { value: new Float32Array(frequencyArraySize.value) }
 
     },
     vertexShader: `
@@ -84,6 +86,7 @@ function init() {
       uniform float time;
       uniform vec2 resolution;
       uniform float fArray[${arrSize}];
+      uniform float cArray[${arrSize}];
       
 
       float plot(vec2 st, float pct){
@@ -101,12 +104,11 @@ function init() {
         float size = float(${arrSize});
         st.y = fract(st.y * size);
 
-        // float y = sin(st.x * 2. * 3.14 + 0.1 * fArray[ int(floor(store.y * size)) ] ) * 4. / 10. + 0.5;
-        // float y = sin(st.x * 2. * 3.14 * 100. + time * 2.) * 4. / 10. + 0.5;
-        // float y = sin(st.x * 2. * 3.14 * 10. * abs( fArray[ int(floor(store.y * size)) ]  ) + time * 2.) * 4. / 10. + 0.5;
-
+        // float y = st.x;
         float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) * 0.00009 * 4. / 10. + 0.5;
     
+        // float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( cArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) * 0.00009 * 4. / 10. + 0.5;
+
         // y = st.x;
         float pct = plot(st,y);
         
@@ -116,7 +118,13 @@ function init() {
         col2 = (1.0-pct)*col2+pct*vec4(vec3(0.), 0.9);
 
         // effect extra 1
-        clamp(abs( fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) > 2000. ? col = col : col = col2;
+        clamp(abs(fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) > 2000. 
+            && 
+        clamp(abs(fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) < 6000. 
+            ? 
+          col = col : col = col2;
+
+        // clamp(abs( cArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) > 2000. ? col = col : col = col2;
 
         gl_FragColor = 1.-col;
       }
@@ -143,13 +151,12 @@ function animate() {
   if (analyserFourier.value != undefined) {
 
     const fArray = analyserFourier.value;
+    const cArray = analyserCentroid.value;
     minArray = [];
 
     for (let i = 0; i < fArray.length; i += 1) {
       minArray.push(fArray[i]);
     }
-
-    console.log(fArray.length);
 
     mesh.material.uniforms.fArray.value = minArray;
 
@@ -160,15 +167,6 @@ function animate() {
     // mesh.scale.x += analyserDCMeter.value.getValue();
     // mesh.scale.y = Math.abs(analyserMeter.value.getValue());
     // mesh.scale.z = Math.abs(analyserFourier.value.getValue()[0]);
-  }
-
-  // if frame 200
-  if (renderer.info.render.frame == 200 && debug == true) {
-    console.log(mesh.material.uniforms.fArray.value);
-  }
-
-  if (renderer.info.render.frame == 400 && debug == true) {
-    console.log(mesh.material.uniforms.fArray.value);
   }
 
 
