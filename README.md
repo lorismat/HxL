@@ -1,4 +1,6 @@
-_current state here to test scrollama implementation_
+_current state here to test scrollama implementation_  
+
+**Branch for music analysis: `meyda-music-analysis`**
 
 # HxL
 
@@ -10,7 +12,7 @@ _current state here to test scrollama implementation_
 - `vue3` with Composition API
 - store with [useState](https://nuxt.com/docs/getting-started/state-management) from `nuxt3`. Example wit `scrollVal` defined in `pages/index.vue`, updated in `components/ScrollamaImplem.vue` with `scrollVal.value = res.progress;` and used in `components/TheCanvas.vue` with `increment = THREE.MathUtils.lerp(0, Math.PI * 2, scrollVal.value);` 
 - VSCode extension `Vue VSCode Snippets v3.1.1` & `Vue Language Features Volar` (test: **v3-base-setup** and **v3onmounted**)
-- Libraries: `gsap`, `threejs`, `scrollama`
+- Libraries: `gsap`, `threejs`, `scrollama`, `meyda` (for sound analysis)
 - Global style in `assets/css/main.css`
 
 # Extra tools
@@ -28,14 +30,11 @@ _current state here to test scrollama implementation_
 
 # Resources
 - [codedrops](https://tympanus.net/codrops/)
+- blog from mattdesl [with frequency analysis](https://mattdesl.svbtle.com/audiograph)
+- this process [shared for audio viz](https://lusion.co/work/kaos-logo-generator)
 
 # Efectos
 
 - cursor mask + cursor effect
 - GSAP reveal
 - Moving Text (left to right / reverse)
-
-# Help on visualising
-
-- blog from mattdesl [with frequency analysis](https://mattdesl.svbtle.com/audiograph)
-- this process [shared for audio viz](https://lusion.co/work/kaos-logo-generator)
