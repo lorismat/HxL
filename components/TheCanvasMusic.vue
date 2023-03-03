@@ -7,7 +7,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 
 // tonejs 
@@ -50,9 +50,9 @@ function init() {
   camera.lookAt( scene.position );
 
   // add controls
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.maxDistance = 2000;
-  controls.minDistance = 1000;
+  // const controls = new OrbitControls(camera, renderer.domElement);
+  // controls.maxDistance = 2000;
+  // controls.minDistance = 1000;
 
   // number of lines depends on frequency
   // check what we can get as information
