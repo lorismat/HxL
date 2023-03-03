@@ -1,15 +1,12 @@
 <template>
-  <div>
-    <!--
+  <Pointer :text="playerText" />
+  
+  <main>
+  <!--
       <ScrollamaImplem />
     -->
     
-    <TheCanvasMusic />
-
-    
-    <button @click="triggerSound">
-      {{playerText}}
-    </button>
+    <TheCanvasMusic @click="triggerSound" />
 
     <!--
       b7 / 
@@ -23,7 +20,7 @@
     ></audio>
 
 
-  </div>
+  </main>
 </template>
 
 <script setup>
@@ -83,29 +80,13 @@ onMounted(() => {
     },
   });
   analyzer.start();
-
-
 })  
 
 </script>
 
-<style scoped>
 
+<style scoped>
 audio {
   visibility: hidden;
-}
-button {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 100;
-  padding: 6px 12px;
-  font-family: monospace;
-  margin:30px;
-  background-color: #333;
-  color:#fff;
-  border: 2px solid #fff;
-  cursor: pointer;
-  border-radius: 6px;
 }
 </style>
