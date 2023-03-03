@@ -32,3 +32,20 @@ onMounted(() => {
 })
 
 </script>
+
+<style lang="scss" scoped>
+
+.header {
+  width: 100%;
+  height: 10vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 100px;
+  font-weight: 900;
+  color: #fff;
+  background: #000;
+  margin:0;
+}
+
+</style>

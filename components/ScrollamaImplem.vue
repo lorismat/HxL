@@ -39,11 +39,10 @@ onMounted(() => {
 
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 
 #scrolly {
   position: relative;
-  
   height:4000px;
   background-color: transparent;
   z-index: 10;
