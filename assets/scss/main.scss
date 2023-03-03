@@ -1,7 +1,21 @@
 @import 'colors';
 
-body {
+html, body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 11px;
   margin:0;
+  height: 100%;
+  background-color: var(--color-bg);
+  color: var(--color-font);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
+body > div,
+body > div > div {
+  height: 100%;
 }
 
 /* Hide scrollbars */
@@ -13,9 +27,20 @@ html::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }
 
+main {
+  height: 100%;
+  cursor: none;
+}
+
 canvas {
   top:0;
   left:0;
   position:fixed;
   z-index: 0;
+}
+
+
+/* ZINDEX */
+.hl-pointer {
+  z-index: 1;
 }
