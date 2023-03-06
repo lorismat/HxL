@@ -25,62 +25,56 @@
 
 <script setup>
 
-// different type with Medya includes
-// rms from 0 to 1
-// https://meyda.js.org/audio-features
-
 import * as Medya from 'meyda';
 
 const playerText = ref('play');
-const initTone = ref(0);
-
-let player;
-
-// set up the array size of frequency which will be the number of lines
-// pow of 2
-const frequencyArraySize = useState('frequencyArraySize', () => Math.pow(2,13) );
-const analyserDCMeter = useState('analyserDCMeter', () => {} );
-const analyserMeter = useState('analyserMeter', () => {} );
 const analyserFourier = useState('analyserFourier', () => {} ); 
 const analyserCentroid = useState('analyserCentroid', () => {} );
-
 let audio;
 
 function triggerSound() {
   if (playerText.value === 'play') {
+    console.log(userAction.value);
+    if (userAction.value == 0) {
+
+      audio = document.querySelector('audio');
+      const audioContext = new AudioContext();
+      const htmlAudioElement = document.getElementById("audio");
+      // Create an "Audio Node" from the Audio Element
+      const source = audioContext.createMediaElementSource(htmlAudioElement);
+      // Connect the Audio Node to your speakers. Now that the audio lives in the
+      // Audio Context, you have to explicitly connect it to the speakers in order to
+      // hear it
+      source.connect(audioContext.destination);
+
+      const analyzer = Meyda.createMeydaAnalyzer({
+        audioContext: audioContext,
+        source: source,
+        bufferSize: 512,
+        featureExtractors: ["powerSpectrum", "spectralCentroid"],
+        callback: (features) => {
+          analyserFourier.value = features.powerSpectrum;
+          analyserCentroid.value = features.spectralCentroid;
+        },
+      });
+      analyzer.start();
+      userAction.value += 1;
+    }
     playerText.value = 'pause';
     audio.play();
+    
   } else {
     playerText.value = 'play';
     audio.pause();
   }
 }
 
-onMounted(() => {
-  audio = document.querySelector('audio');
-  const audioContext = new AudioContext();
-  const htmlAudioElement = document.getElementById("audio");
-  // Create an "Audio Node" from the Audio Element
-  const source = audioContext.createMediaElementSource(htmlAudioElement);
-  // Connect the Audio Node to your speakers. Now that the audio lives in the
-  // Audio Context, you have to explicitly connect it to the speakers in order to
-  // hear it
-  source.connect(audioContext.destination);
+const userAction = ref(0);
 
-  const analyzer = Meyda.createMeydaAnalyzer({
-    audioContext: audioContext,
-    source: source,
-    bufferSize: 512,
-    featureExtractors: ["powerSpectrum", "spectralCentroid"],
-    callback: (features) => {
-
-      analyserFourier.value = features.powerSpectrum;
-      analyserCentroid.value = features.spectralCentroid;
-
-    },
-  });
-  analyzer.start();
-})  
+watch(() => userAction.value, () => {
+  
+  
+})
 
 </script>
 

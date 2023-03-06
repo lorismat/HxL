@@ -160,13 +160,15 @@ function animate() {
 
     mesh.material.uniforms.fArray.value = minArray;
 
-    mesh.rotation.x += 0.001; 
-    mesh.rotation.y += 0.001;
-    mesh.rotation.z += 0.001;
+    console.log(minArray);
 
-    // mesh.scale.x += analyserDCMeter.value.getValue();
-    // mesh.scale.y = Math.abs(analyserMeter.value.getValue());
-    // mesh.scale.z = Math.abs(analyserFourier.value.getValue()[0]);
+    // taking the first value of the array to check if there is sound or not to rotate the sphere
+    if (minArray[0] != 0) {
+      mesh.rotation.y += 0.0002; 
+      mesh.rotation.x += 0.0002;
+      mesh.rotation.z += 0.0002;
+    }
+    
   }
 
 
