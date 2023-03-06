@@ -2,11 +2,8 @@
   <Pointer :text="playerText" />
   
   <main>
-  <!--
-      <ScrollamaImplem />
-    -->
     
-    <TheCanvasMusic @click="triggerSound" />
+    <Canvas1 @click="triggerSound" />
 
     <!--
       b7 / 
@@ -24,27 +21,24 @@
 </template>
 
 <script setup>
-
 import * as Medya from 'meyda';
 
 const playerText = ref('play');
+const userAction = ref(0); // init value for conditional trigger of the sound
+
 const analyserFourier = useState('analyserFourier', () => {} ); 
 const analyserCentroid = useState('analyserCentroid', () => {} );
 let audio;
 
 function triggerSound() {
   if (playerText.value === 'play') {
-    console.log(userAction.value);
-    if (userAction.value == 0) {
 
+    // below is the initial condition to wait for user interaction
+    if (userAction.value == 0) {
       audio = document.querySelector('audio');
       const audioContext = new AudioContext();
       const htmlAudioElement = document.getElementById("audio");
-      // Create an "Audio Node" from the Audio Element
       const source = audioContext.createMediaElementSource(htmlAudioElement);
-      // Connect the Audio Node to your speakers. Now that the audio lives in the
-      // Audio Context, you have to explicitly connect it to the speakers in order to
-      // hear it
       source.connect(audioContext.destination);
 
       const analyzer = Meyda.createMeydaAnalyzer({
@@ -57,24 +51,20 @@ function triggerSound() {
           analyserCentroid.value = features.spectralCentroid;
         },
       });
+
       analyzer.start();
+
+      // increment userAction.value to prevent this conditional from running again
       userAction.value += 1;
     }
+
     playerText.value = 'pause';
     audio.play();
-    
   } else {
     playerText.value = 'play';
     audio.pause();
   }
 }
-
-const userAction = ref(0);
-
-watch(() => userAction.value, () => {
-  
-  
-})
 
 </script>
 
