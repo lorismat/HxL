@@ -14,8 +14,7 @@ let mesh;
 
 const debug = false;
 
-const frequencyArraySize = useState('frequencyArraySize');
-const analyserFourier = useState('analyserFourier');
+const signals = useState('signals');
 
 let minArray = [0];
 
@@ -38,22 +37,20 @@ function init() {
 
   renderer.setClearColor(0x000000, 1.);
 
-  camera.position.set(0,0,1000);
+  camera.position.set(0,0,1200);
   camera.lookAt( scene.position );
 
   stats = new Stats();
   if (debug) document.body.appendChild( stats.dom );
 
-  const arrSize = 82;
+  const arrSize = signals.value.arrSize;
 
   const material = new THREE.ShaderMaterial({
     transparent:true,
     side: THREE.DoubleSide,
     uniforms: {
       time: { value: 0 },
-      resolution: { value: new THREE.Vector2() },
-      fArray: { value: new Float32Array(frequencyArraySize.value) },
-      cArray: { value: new Float32Array(frequencyArraySize.value) }
+      fArray: { value: new Float32Array(arrSize) },
 
     },
     vertexShader: `
@@ -66,9 +63,7 @@ function init() {
     `,
     fragmentShader: `
       uniform float time;
-      uniform vec2 resolution;
       uniform float fArray[${arrSize}];
-      uniform float cArray[${arrSize}];
       
 
       float plot(vec2 st, float pct){
@@ -125,12 +120,10 @@ function animate() {
   stats.update();
 
   mesh.material.uniforms.time.value = performance.now() / 1000;
-  mesh.material.uniforms.resolution.value.x = renderer.domElement.width;
-  mesh.material.uniforms.resolution.value.y = renderer.domElement.height;
 
-  if (analyserFourier.value != undefined) {
+  if (signals.value.powerSpectrum != undefined) {
 
-    const fArray = analyserFourier.value;
+    const fArray = signals.value.powerSpectrum;
     minArray = [];
     for (let i = 0; i < fArray.length; i += 1) {
       minArray.push(fArray[i]);
