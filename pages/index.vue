@@ -3,7 +3,7 @@
   
   <main>
     
-    <Canvas1 @click="triggerSound" />
+    <Canvas4 @click="triggerSound" />
 
     <!--
       b7 / 
@@ -13,7 +13,7 @@
       loop
       crossorigin="anonymous"
       id="audio"
-      src="sounds/1_sample.mp3"
+      src="sounds/2.mp3"
     ></audio>
 
 
