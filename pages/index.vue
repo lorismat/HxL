@@ -3,7 +3,7 @@
   
   <main>
     
-    <Canvas1 @click="triggerSound" />
+    <Canvas3 @click="triggerSound" />
 
     <!--
       b7 / 
@@ -13,7 +13,7 @@
       loop
       crossorigin="anonymous"
       id="audio"
-      src="sounds/1.mp3"
+      src="sounds/1_sample.mp3"
     ></audio>
 
 
@@ -26,14 +26,18 @@ import * as Medya from 'meyda';
 const playerText = ref('play');
 const userAction = ref(0); // init value for conditional trigger of the sound
 
-const analyserFourier = useState('analyserFourier', () => {} ); 
-const analyserCentroid = useState('analyserCentroid', () => {} );
+const signals = useState('signals', () => {
+  return {
+    arrSize: 32,
+    powerSpectrum: []
+  }
+});
+
 let audio;
 
 function triggerSound() {
   if (playerText.value === 'play') {
 
-    // below is the initial condition to wait for user interaction
     if (userAction.value == 0) {
       audio = document.querySelector('audio');
       const audioContext = new AudioContext();
@@ -44,20 +48,15 @@ function triggerSound() {
       const analyzer = Meyda.createMeydaAnalyzer({
         audioContext: audioContext,
         source: source,
-        bufferSize: 512,
-        featureExtractors: ["powerSpectrum", "spectralCentroid"],
+        bufferSize: Math.pow(2, 8),
+        featureExtractors: ["powerSpectrum"],
         callback: (features) => {
-          analyserFourier.value = features.powerSpectrum;
-          analyserCentroid.value = features.spectralCentroid;
+          signals.value.powerSpectrum = features.powerSpectrum.filter((_, i) => i % 4 === 0);
         },
       });
-
       analyzer.start();
-
-      // increment userAction.value to prevent this conditional from running again
       userAction.value += 1;
     }
-
     playerText.value = 'pause';
     audio.play();
   } else {

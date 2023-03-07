@@ -10,7 +10,9 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 let stats;
 let scene, renderer, camera, canvas, mesh;
-let inc = 0;
+let inc= 0;
+let inc2 = 0;
+let inc3 = 0;
 
 const signals = useState('signals');
 
@@ -50,7 +52,9 @@ function init() {
     uniforms: {
       fArray: { value: new Float32Array(arrSize) },
       u_time: { value: 0.0 },
-      u_inc: { value: 0.0 }
+      u_inc: { value: 0.0 },
+      u_inc2: { value: 0.0 },
+      u_inc3: { value: 0.0 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -65,6 +69,8 @@ function init() {
       uniform float u_time;
       varying vec2 vUv;
       uniform float u_inc;
+      uniform float u_inc2;
+      uniform float u_inc3;
 
       // add noise 
       float random (vec2 st) {
@@ -109,16 +115,32 @@ function init() {
         // float val = fArray[ int(floor(store.y * size)) ];
 
         float val = fArray[ 0 ];
+        float val2 = fArray[ 1 ];
+        float val3 = fArray[ 2 ];
+
+
+        // remap fArray from 0 to 22050 to 0 to 1 in glsl
+        val = val / 22050.0;
+        val2 = val2 / 22050.0;
+        val3 = val3 / 22050.0;
 
         // val = min(val, 0.7); // normalize
         // abs(noise(st + u_time * val * 0.1))
 
-        val = 0.5 + abs(noise(st + u_inc * 0.001 ) * val * 0.0008);
+        val = 0.4 + abs(noise(st/4. + u_inc * 0.02 ) ) * 0.8;
+        val2 = 0.4 + abs(noise(st/4. + u_inc2 * 0.02 ) ) * 0.8;
+        val3 = 0.4 + abs(noise(st/4. + u_inc3 * 0.02 ) ) * 0.8;
 
         float t = 0.01; // thickness
 
         col = mix(col, vec3(0.0), step(val, length( abs(st) )));
         col = mix(col, vec3(1.0), step(val + t, length( abs(st) )));
+
+        col = mix(col, vec3(0.0), step(val2, length( abs(st) )));
+        col = mix(col, vec3(1.0), step(val2 + t, length( abs(st) )));
+
+        col = mix(col, vec3(0.0), step(val3, length( abs(st) )));
+        col = mix(col, vec3(1.0), step(val3 + t, length( abs(st) )));
 
         col = 1. - col;
 
@@ -152,14 +174,29 @@ function animate() {
       minArray.push(fArray[i]);
     }
 
-    minArray[0] > 0 ? inc++ : '';
+    if (minArray[0] > 100) {
+      inc+=2;
+    } else if (minArray[0] > 0.1) {
+      inc+=0.1;
+    }
+
+    if (minArray[1] > 100) {
+      inc2+=2;
+    } else if (minArray[1] > 0.1) {
+      inc2+=0.1;
+    }
+
+    if (minArray[2] > 100) {
+      inc3+=2;
+    } else if (minArray[2] > 0.1) {
+      inc3+=0.1;
+    }
+
     mesh.material.uniforms.fArray.value = minArray;
     mesh.material.uniforms.u_inc.value = inc;
-    // mesh.material.uniforms.u_inc.value = THREE.MathUtils.mapLinear(minArray[0], 0, 100, 0, 1);
-    // logarithm with js
-    // mesh.material.uniforms.u_inc.value = Math.log(minArray[0]);
+    mesh.material.uniforms.u_inc2.value = inc2;
+    mesh.material.uniforms.u_inc3.value = inc3;
 
-    console.log(minArray[0]);
    
   }
 
