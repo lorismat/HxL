@@ -3,7 +3,7 @@
   
   <main>
     
-    <Canvas4 @click="triggerSound" />
+    <Canvas3 @click="triggerSound" />
 
     <!--
       b7 / 
