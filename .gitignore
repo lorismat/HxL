@@ -9,4 +9,5 @@ dist
 .DS_Store
 .vscode
 .ideas
+.extras
 *.swp

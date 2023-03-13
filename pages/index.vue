@@ -3,7 +3,7 @@
   
   <main>
     
-    <Canvas3 @click="triggerSound" />
+    <Canvas4 @click="triggerSound" />
 
     <!--
       b7 / 
@@ -51,7 +51,8 @@ function triggerSound() {
         bufferSize: Math.pow(2, 8),
         featureExtractors: ["powerSpectrum"],
         callback: (features) => {
-          signals.value.powerSpectrum = features.powerSpectrum.filter((_, i) => i % 4 === 0);
+          // signals.value.powerSpectrum = features.powerSpectrum.filter((_, i) => i % 4 === 0);
+          signals.value.powerSpectrum = features.powerSpectrum.filter((_, i) => i % 1 === 0);
         },
       });
       analyzer.start();

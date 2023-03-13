@@ -33,9 +33,8 @@ let xInc = 0.08;
 let yInc = 0.04;
 let zInc = 0.002;
 
-const sclX = 32;
-const sclZ = 32;
-const spread = 5;
+const sclX = 50;
+const sclZ = 50;
 
 const noise = new SimplexNoise();
 // -- end of noise for points
@@ -73,7 +72,7 @@ function init() {
   let positions = [];
   let points = [];
   let colors = [];
-  
+  const spread = 3;
   for (let i = -sclX/2; i < sclX/2; i++) {
     for (let j = -sclZ/2; j < sclZ/2; j++) {
       let x = i*spread;
@@ -142,8 +141,8 @@ function init() {
         pos = position;
         vNormal = normal;
         
-        pos.x += noise(pos.xy/100. + u_time * 0.3) * 5.;
-        pos.y += noise(pos.xy/100. + u_time * 0.3) * 5.;
+        pos.x += noise(pos.xy/100. + u_time * 0.3) * 10.;
+        pos.y += noise(pos.xy/100. + u_time * 0.3) * 10.;
         pos.z += noise(pos.xy/100. + u_time * 0.3) * 10.;
 
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -158,7 +157,11 @@ function init() {
       void main() {
 
         vec2 center = vec2(0.);
-        vec2 magnified = vUv;
+        vec2 delta = vUv - center;
+        float dist = length(delta);
+        vec2 direction = delta / dist;
+
+        vec2 magnified = center + distance(vNormal.yz, center) * 1.;
 
 
         vec4 color = texture2D(myTexture, magnified);
@@ -204,22 +207,18 @@ function animate() {
   yOff = 0;
   let tempVal = 2;
 
-  if (signals.value.powerSpectrum[2] > 0) {
-    for (let i = 0; i <sclX; i++) {
-      for (let j = 0; j < sclZ; j++) {
-        let z = THREE.MathUtils.mapLinear(noise.noise3d(xOff, yOff, zOff), -1, 1, 0, 100);
-        xOff += xInc;
-        positions[tempVal] = z;
-        tempVal += 3;
-      }
-      yOff += yInc;
-      xOff = 0;
+  for (let i = 0; i <sclX; i++) {
+    for (let j = 0; j < sclZ; j++) {
+      let z = THREE.MathUtils.mapLinear(noise.noise3d(xOff, yOff, zOff), -1, 1, 0, 100);
+      xOff += xInc;
+      positions[tempVal] = z;
+      tempVal += 3;
     }
-    zOff += zInc;
-    geometryPoints.attributes.position.needsUpdate = true;
+    yOff += yInc;
+    xOff = 0;
   }
-
-  console.log(signals.value.powerSpectrum[1]);
+  zOff += zInc;
+  geometryPoints.attributes.position.needsUpdate = true;
 
   meshSphere.rotation.x = -Math.PI;
   meshSphere.rotation.y = Math.PI / 2;
