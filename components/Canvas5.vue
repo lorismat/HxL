@@ -5,13 +5,6 @@
 </template>
 
 <script setup>
-
-// about render targets
-// https://threejs.org/manual/#en/rendertargets
-// https://threejs.org/docs/#api/en/renderers/WebGLRenderTarget
-// model:
-// https://experiments.p5aholic.me/day/027/
-
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
@@ -22,158 +15,148 @@ const props = defineProps({
   }
 });
 
-let camera, scene, renderer, canvas, stats;
-let mesh, pivot;
 
-const signals = useState('signals');
+let stats;
+let scene, renderer, camera, canvas;
+let mesh;
 
 const debug = false;
 
-const frustumSize = 1000;
+const signals = useState('signals');
 
-let inc = 0;
+let minArray = [0];
 
 function init() {
   scene = new THREE.Scene();
-
-  // add orthographic camera
-  const aspect = window.innerWidth / window.innerHeight;
-  camera = new THREE.OrthographicCamera( frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 1, 1000 );
+  camera = new THREE.PerspectiveCamera(
+    70,
+    window.innerWidth / window.innerHeight,
+    1,
+    3000
+  );
 
   canvas = document.getElementById(props.id);
-
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
+  
   renderer.setSize(window.innerWidth, window.innerHeight);
+
+  renderer.alpha = true;
+
   renderer.setClearColor(0x000000, 1.);
 
-  const count = 32;
-  const radius = 250;
-  const geometry = new THREE.CircleGeometry( radius, 128 );
+  camera.position.set(0,0,1200);
+  camera.lookAt( scene.position );
+
+  stats = new Stats();
+  if (debug) document.body.appendChild( stats.dom );
 
   const arrSize = signals.value.arrSize;
-  
-  // add shader material
-  const material = new THREE.ShaderMaterial( {
+
+  const material = new THREE.ShaderMaterial({
+    transparent:true,
+    side: THREE.DoubleSide,
     uniforms: {
-      resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      time: { value: 0 },
       fArray: { value: new Float32Array(arrSize) },
-      u_time: { value: 0.0 },
 
     },
     vertexShader: `
       varying vec2 vUv;
       void main() {
+        vec3 pos = position;
         vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4( position, 1.0 );
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
       }
     `,
     fragmentShader: `
-      uniform vec2 resolution;
+      uniform float time;
       uniform float fArray[${arrSize}];
-      uniform float u_time;
-      varying vec2 vUv;
-
       
-      // add noise 
-      float random (vec2 st) {
-          return fract(sin(dot(st.xy,
-                              vec2(12.9808,78.233)))*
-              43758.5453123);
-      }
-      vec2 random2(vec2 st){
-          st = vec2( dot(st,vec2(127.1,311.7)),
-                    dot(st,vec2(269.5,183.3)) );
-          return -1.0 + 2.0*fract(sin(st)*43758.5453123);
-      }
-      // Gradient Noise by Inigo Quilez - iq/2013
-      // https://www.shadertoy.com/view/XdXGW8
-      float noise(vec2 st) {
-          vec2 i = floor(st);
-          vec2 f = fract(st);
-          vec2 u = f*f*(3.0-2.0*f);
-          return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
-                          dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-                      mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
-                          dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+
+      float plot(vec2 st, float pct){
+        return  smoothstep( pct-0.1, pct, st.y) -
+                smoothstep( pct, pct+0.1, st.y);
       }
 
+
+      varying vec2 vUv;
       void main() {
-        vec2 st = gl_FragCoord.xy / resolution.xy;
 
-        float val = fArray[ 0 ];
-        val = val;
+        vec2 st = vUv;
+        vec2 store = vUv;
 
-        vec3 color = vec3(1.0);
-        vec2 center = vec2(0.5, 0.5);
-        float thickness = 0.01 * sin(val * 0.02 * st.x + u_time ) * noise(st) * 2.;
-        float smoothing = 0.005;
-        color *= smoothstep(0.49 - thickness - smoothing, 0.49 - thickness, distance(center, vUv));
-        gl_FragColor = vec4(color,1.0);
+        float size = float(${arrSize});
+        st.y = fract(st.y * size);
+
+        // float y = st.x;
+        float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) * 0.00009 * 4. / 10. + 0.5;
+    
+        // float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( cArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) * 0.00009 * 4. / 10. + 0.5;
+
+        // y = st.x;
+        float pct = plot(st,y);
+        
+        vec4 col = vec4(1.);
+        vec4 col2 = vec4(1.);
+        col = (1.0-pct)*col+pct*vec4(vec3(0.), 0.1);
+        col2 = (1.0-pct)*col2+pct*vec4(vec3(0.), 0.9);
+
+        // effect extra 1
+        clamp(abs(fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) > 2000. 
+            && 
+        clamp(abs(fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) < 6000. 
+            ? 
+          col = col : col = col2;
+
+        // clamp(abs( cArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) > 2000. ? col = col : col = col2;
+
+        gl_FragColor = 1.-col;
       }
     `,
-    side: THREE.DoubleSide,
-  } );
+  });
 
-  const matrix = new THREE.Matrix4();
-  mesh = new THREE.InstancedMesh( geometry, material, count );
+  const geometry = new THREE.SphereGeometry(500, 64, 64);
+  mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
 
-  for ( let i = 0; i < count; i ++ ) {
-    //matrix.makeRotationX( i * 0.04 );
-    mesh.setMatrixAt( i, matrix );
-  }
-  
-  scene.add( mesh );
-
-  camera.position.set(0,0,300);
-  camera.lookAt( scene.position );
-
-  stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  mesh.rotation.y =  0; 
+  mesh.rotation.x = Math.PI / 4;
+  mesh.rotation.z = Math.PI / 4;
   
 }
 
 function animate() {
   requestAnimationFrame(animate);
-
-  const time = performance.now() * 0.001;
-  inc += 0.001;
-  
-  if (signals.value.powerSpectrum[0] > 0) {  
-    
-    // update instance matrix
-    const matrix = new THREE.Matrix4();
-    for ( let i = 0; i < 32; i ++ ) {
-      // update uniform
-      if (i == 0 && signals.value.powerSpectrum[0] > 500) {
-        
-        mesh.material.uniforms.fArray.value = signals.value.powerSpectrum;
-        mesh.material.uniforms.u_time.value = time;
-      }
-      matrix.makeRotationX( i * 0.04 + inc );
-      mesh.setMatrixAt( i, matrix );
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-
-  }
-  
   renderer.render(scene, camera);
-
-  // update frame stats
   stats.update();
+
+  mesh.material.uniforms.time.value = performance.now() / 1000;
+
+  if (signals.value.powerSpectrum != undefined) {
+
+    const fArray = signals.value.powerSpectrum;
+    minArray = [];
+    for (let i = 0; i < fArray.length; i += 1) {
+      minArray.push(fArray[i]);
+    }
+
+    mesh.material.uniforms.fArray.value = minArray;
+
+    // taking the first value of the array to check if there is sound or not to rotate the sphere
+    if (minArray[0] != 0) {
+      //mesh.rotation.y += 0.0002; 
+      //mesh.rotation.x += 0.0002;
+      //mesh.rotation.z += 0.0002;
+    } 
+  } 
 
 }
 
 function onWindowResize() {
-
-  const aspect = window.innerWidth / window.innerHeight;
-  camera.left = - frustumSize * aspect / 2;
-  camera.right = frustumSize * aspect / 2;
-  camera.top = frustumSize / 2;
-  camera.bottom = - frustumSize / 2;
+  camera.aspect = window.innerWidth / window.innerHeight ;
   camera.updateProjectionMatrix();
-  renderer.setSize( window.innerWidth, window.innerHeight );
-
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 onMounted(() => {

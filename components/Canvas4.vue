@@ -5,17 +5,8 @@
 </template>
 
 <script setup>
-
-// about render targets
-// https://threejs.org/manual/#en/rendertargets
-// https://threejs.org/docs/#api/en/renderers/WebGLRenderTarget
-// model:
-// https://experiments.p5aholic.me/day/027/
-
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { SimplexNoise } from 'three/examples/jsm/math/SimplexNoise.js';
 
 const props = defineProps({
   id: {
@@ -24,30 +15,10 @@ const props = defineProps({
   }
 });
 
-let camera, scene, targetScene, renderer, controls, canvas, meshSphere, stats;
-let renderTarget;
-let geometryPoints;
+let stats;
+let scene, renderer, camera, canvas, mesh;
 
 const signals = useState('signals');
-
-
-// noise for points
-let xOff = 1;
-let yOff = 1;
-let zOff = 100;
-
-let xInc = 0.08;
-let yInc = 0.04;
-let zInc = 0.002;
-
-const sclX = 32;
-const sclZ = 32;
-const spread = 5;
-
-const noise = new SimplexNoise();
-// -- end of noise for points
-
-let inc = 0;
 const debug = false;
 
 function init() {
@@ -60,78 +31,60 @@ function init() {
   );
 
   canvas = document.getElementById(props.id);
-
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
+
   renderer.setClearColor(0x000000, 1.);
 
-  // add controls
-  controls = new OrbitControls(camera, renderer.domElement);
+  camera.position.set(0,0,1000);
+  camera.lookAt( scene.position );
 
-  renderTarget = new THREE.WebGLRenderTarget(window.innerWidth*2, window.innerWidth*2);
+  stats = new Stats();
+  if (debug) document.body.appendChild( stats.dom );
 
-  // Create a cloud of points mesh that will be rendered to the render target
-  targetScene = new THREE.Scene();
-
-  // add a cloud of points 
-  const texture = new THREE.TextureLoader().load("/textures/disc.png");
-  geometryPoints = new THREE.BufferGeometry();
-  let positions = [];
-  let points = [];
-  let colors = [];
-  
-  for (let i = -sclX/2; i < sclX/2; i++) {
-    for (let j = -sclZ/2; j < sclZ/2; j++) {
-      let x = i*spread;
-      let y = j*spread;
-      let z = 0;
-      points.push( new THREE.Vector3(x,y,0) );
-      points.push( new THREE.Vector3(x,y,10) );
-      positions.push(x, y, z);
-      colors.push(1, 1, 1, 1);
-    }
-  }
-  geometryPoints.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometryPoints.setAttribute("color", new THREE.Float32BufferAttribute( colors, 4 ));
-  const materialPoints = new THREE.PointsMaterial({
-    vertexColors: true,
-    map: texture,
-    transparent: true,
-    depthTest: false,
-    size: 2,
-  });
-  const meshPoints = new THREE.Points(geometryPoints, materialPoints);
- //meshPoints.rotation.x = Math.PI * 0.5;
-  targetScene.add( meshPoints );
-
-  const SphereGeometry = new THREE.SphereGeometry(75, 64*2, 64*2);
-  const shaderMaterial = new THREE.ShaderMaterial({
+  const material = new THREE.ShaderMaterial({
     uniforms: {
-      myTexture: { value: renderTarget.texture },
+
+      rms: { value: 0.0 },
+      energy: { value: 0.0 },
+      perceptualSpread: { value: 0.0 },
+      clean: { value: 0.0 },
+
       u_time: { value: 0.0 },
     },
     vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vec3 pos = position;
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+    fragmentShader: `
+    
+      uniform float clean;
+      uniform float rms;
+      uniform float zcr;
+      uniform float energy;
+      uniform float perceptualSpread;
+      uniform float spectralSpread;
 
       uniform float u_time;
-
       varying vec2 vUv;
-      varying vec3 pos;
-      varying vec3 vNormal;
 
-      // add noise 
       float random (vec2 st) {
           return fract(sin(dot(st.xy,
                               vec2(12.9808,78.233)))*
               43758.5453123);
       }
+
       vec2 random2(vec2 st){
           st = vec2( dot(st,vec2(127.1,311.7)),
                     dot(st,vec2(269.5,183.3)) );
           return -1.0 + 2.0*fract(sin(st)*43758.5453123);
       }
-      // Gradient Noise by Inigo Quilez - iq/2013
-      // https://www.shadertoy.com/view/XdXGW8
+
       float noise(vec2 st) {
           vec2 i = floor(st);
           vec2 f = fract(st);
@@ -142,105 +95,60 @@ function init() {
                           dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
       }
 
-
       void main() {
 
-        vUv = uv;
-        pos = position;
-        vNormal = normal;
-        
-        pos.x += noise(pos.xy/100. + u_time * 0.3) * 5.;
-        pos.y += noise(pos.xy/100. + u_time * 0.3) * 5.;
-        pos.z += noise(pos.xy/100. + u_time * 0.3) * 10.;
+        vec2 st = vUv;
+        st = st * 2. - 1.;
+        float t = 0.007; // thickness
+        float smoothFactor = 0.003;
 
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        vec3 col = vec3(1.);
+    
+        // middle, background
+        col = mix(vec3(0.), vec3(1.), 1. - smoothstep(perceptualSpread, perceptualSpread + smoothFactor, length( abs(st) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(perceptualSpread - t, perceptualSpread - t + smoothFactor, length( abs(st) )));
+
+        col = mix(col, vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st - vec2(0.1) + vec2(noise(st * 10.) * 0.1) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st - vec2(0.1) + vec2(noise(st * 10.) * 0.1) ) )));
+
+        
+        col = mix(col, vec3(1.), 1. - smoothstep(energy, energy + smoothFactor, length( abs(st + vec2(0.1) + vec2(noise(st * 10.) * 0.01) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(energy - t, energy - t + smoothFactor, length( abs(st + vec2(0.1) + vec2(noise(st * 10.) * 0.01) ) )));
+
+        gl_FragColor = vec4(col, 1.);
       }
     `,
-    fragmentShader: `      
-      varying vec2 vUv;
-      varying vec3 pos;
-      varying vec3 vNormal;
-      uniform sampler2D myTexture;
- 
-      void main() {
-
-        vec2 center = vec2(0.);
-        vec2 magnified = vUv;
-
-
-        vec4 color = texture2D(myTexture, magnified);
-
-        float threshold = step(0.8, distance(vNormal.yz, center)) + 1. - step(0.75, distance(vNormal.yz, center));
-        float black = 1.-step(0.8, distance(vNormal.yz, center));
-        color = mix(vec4(1.), color, threshold);
-        color = mix(vec4(0.), color, black);
-        
-
-        gl_FragColor = color;
-      }
-    `
   });
 
-  shaderMaterial.transparent = true;
-  meshSphere = new THREE.Mesh(SphereGeometry, shaderMaterial);
-  meshSphere.rotation.x = -Math.PI * 1.5;
-  scene.add(meshSphere);
-  
-  camera.position.set(0,0,200);
-  camera.lookAt( scene.position );
-
-  stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  // plane geometry with threejs
+  const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
+  mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
   
 }
 
 function animate() {
   requestAnimationFrame(animate);
-
-  inc += 0.003;
-
-  if (signals.value.powerSpectrum[0] > 0) {
-    // update uniform time
-    const time = performance.now() * 0.001;
-    meshSphere.material.uniforms.u_time.value = time;
-  }
-  
-
-  // update cloud points
-  const positions = geometryPoints.attributes.position.array;
-  yOff = 0;
-  let tempVal = 2;
-
-  if (signals.value.powerSpectrum[2] > 0) {
-    for (let i = 0; i <sclX; i++) {
-      for (let j = 0; j < sclZ; j++) {
-        let z = THREE.MathUtils.mapLinear(noise.noise3d(xOff, yOff, zOff), -1, 1, 0, 100);
-        xOff += xInc;
-        positions[tempVal] = z;
-        tempVal += 3;
-      }
-      yOff += yInc;
-      xOff = 0;
-    }
-    zOff += zInc;
-    geometryPoints.attributes.position.needsUpdate = true;
-  }
-
-
-  meshSphere.rotation.x = -Math.PI;
-  meshSphere.rotation.y = Math.PI / 2;
-
-  renderer.setRenderTarget(renderTarget);
-  renderer.render(targetScene, camera);
-  // renderer.render(scene, camera);
-  renderer.setRenderTarget(null);
   renderer.render(scene, camera);
-
-  // update frame stats
   stats.update();
 
-  // update controls
-  controls.update();
+  // add time uniform
+  const time = performance.now() / 1000;
+  mesh.material.uniforms.u_time.value = time;
+
+  if (signals.value.rms != undefined && signals.value.rms > 0) {
+    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
+    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 1.25;
+
+    mesh.material.uniforms.clean.value = 1.;
+  } else {
+    mesh.material.uniforms.rms.value = 0.0;
+    mesh.material.uniforms.energy.value = 0.0;
+    mesh.material.uniforms.perceptualSpread.value = 0.75;
+
+    mesh.material.uniforms.clean.value = 0.;
+  }
 
 }
 

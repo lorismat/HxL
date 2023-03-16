@@ -1,7 +1,20 @@
 <template>
   <div>
-    <canvas :id="props.id"></canvas>
+    <div>
+      <canvas :id="props.id"></canvas>
+    </div>
+
+    <div class="container-description">
+      <div class="description">
+        <div>rms</div>
+        <div>zcr</div>
+        <div>energy</div>
+        <div>perceptualSpread</div>
+        <div>spectralSpread</div>
+      </div>
+    </div>
   </div>
+  
 </template>
 
 <script setup>
@@ -21,9 +34,6 @@ let scene, renderer, camera, canvas, mesh;
 const signals = useState('signals');
 const debug = false;
 
-// incrementing frequencies and init array
-let inc = [0, 0, 0];
-
 function init() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
@@ -34,7 +44,7 @@ function init() {
   );
 
   canvas = document.getElementById(props.id);
-  renderer = new THREE.WebGLRenderer({ antialias : true, canvas, alpha: true });
+  renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -47,13 +57,12 @@ function init() {
   if (debug) document.body.appendChild( stats.dom );
 
   const material = new THREE.ShaderMaterial({
-    transparent:true,
-    side: THREE.DoubleSide,
     uniforms: {
-      fArray: { value: new Float32Array(signals.value.arrSize) },
-      u_f0: { value: 0.0 },
-      u_f1: { value: 0.0 },
-      u_f2: { value: 0.0 }
+      rms: { value: 0.0 },
+      zcr: { value: 0.0 },
+      energy: { value: 0.0 },
+      perceptualSpread: { value: 0.0 },
+      spectralSpread: { value: 0.0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -64,11 +73,13 @@ function init() {
       }
     `,
     fragmentShader: `
-      uniform float fArray[${signals.value.arrSize}];
+    
+      uniform float rms;
+      uniform float zcr;
+      uniform float energy;
+      uniform float perceptualSpread;
+      uniform float spectralSpread;
       varying vec2 vUv;
-      uniform float u_f0;
-      uniform float u_f1;
-      uniform float u_f2;
 
       float random (vec2 st) {
         return fract(sin(dot(st.xy,
@@ -96,44 +107,32 @@ function init() {
 
         vec2 st = vUv;
 
-        st = st * 2. - 1.;        
+        st = st * 2. - 1.;
         vec3 col = vec3(1.);
-
+    
         float t = 0.007; // thickness
         float smoothFactor = 0.003;
 
-        float val = fArray[0];
-        float val2 = fArray[1];
-        float val3 = fArray[2];
+        col = mix(vec3(0.), vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st - vec2(0.2) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st - vec2(0.2) ) )));
 
-        // remap fArray from 0 to 22050 to 0 to 1
-        val = val / 22050.0;
-        val2 = val2 / 22050.0;
-        val3 = val3 / 22050.0;
+        col = mix(col, vec3(1.), 1. - smoothstep(zcr, zcr + smoothFactor, length( abs(st - vec2(0.1) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(zcr - t, zcr - t + smoothFactor, length( abs(st - vec2(0.1) ) )));
 
-        val = 0.5 + abs(noise(st/4. + u_f0 * 0.02 ) ) * 0.8;
-        val2 = 0.5 + abs(noise(st/4. + u_f1 * 0.02 ) ) * 0.8;
-        val3 = 0.5 + abs(noise(st/4. + u_f2 * 0.02 ) ) * 0.8;
+        col = mix(col, vec3(1.), 1. - smoothstep(energy, energy + smoothFactor, length( abs(st) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(energy - t, energy - t + smoothFactor,length( abs(st) )));
 
-        fArray[0] + fArray[1] + fArray[2] == 0. ? val = val2 = val3 = 0.75 : val = val;
+        col = mix(col, vec3(1.), 1. - smoothstep(perceptualSpread, perceptualSpread + smoothFactor, length( abs(st + vec2(0.1) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(perceptualSpread - t, perceptualSpread - t + smoothFactor, length( abs(st + vec2(0.1) ) )));
 
-        col = mix(col, vec3(0.0), smoothstep(val, val + smoothFactor, length( abs(st) )));
-        col = mix(col, vec3(1.0), smoothstep(val + t, val + smoothFactor + t, length( abs(st) )));
-
-        col = mix(col, vec3(0.0), smoothstep(val2, val2 + smoothFactor, length( abs(st) )));
-        col = mix(col, vec3(1.0), smoothstep(val2 + t, val2 + smoothFactor + t, length( abs(st) )));
-
-        col = mix(col, vec3(0.0), smoothstep(val3, val3 + smoothFactor, length( abs(st) )));
-        col = mix(col, vec3(1.0), smoothstep(val3 + t, val3 + smoothFactor + t, length( abs(st) )));
-
-        col = 1. - col;
+        col = mix(col, vec3(1.), 1. - smoothstep(spectralSpread, spectralSpread + smoothFactor, length( abs(st + vec2(0.2) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(spectralSpread - t, spectralSpread - t + smoothFactor, length( abs(st + vec2(0.2) ) )));
 
         gl_FragColor = vec4(col, 1.);
       }
     `,
   });
 
-  // plane geometry with threejs
   const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
@@ -146,29 +145,19 @@ function animate() {
   stats.update();
 
   if (signals.value.rms != undefined && signals.value.rms > 0) {
-    const fArray = signals.value.powerSpectrum;
-    for (let i = 0; i < fArray.length; i++) {
-      fArray[i] = Math.abs(fArray[i]);
-      if (fArray[i] > 100) {
-        inc[i] += 2;
-      } else if (fArray[i] > 0.5) {
-        inc[i] += 0.1;
-      } else if (fArray[i] == 0) {
-        inc[i] = 0.75;
-      }
-    }
-
-    mesh.material.uniforms.fArray.value = fArray;
-    mesh.material.uniforms.u_f0.value = inc[0];
-    mesh.material.uniforms.u_f1.value = inc[1];
-    mesh.material.uniforms.u_f2.value = inc[2];
+    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
+    mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
+    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
   } else {
-    const fArray = [];
-    for (let i = 0; i < signals.value.arrSize; i++) {
-      fArray.push(0);
-    }
-    mesh.material.uniforms.fArray.value = fArray;
+    mesh.material.uniforms.rms.value = 0.0;
+    mesh.material.uniforms.zcr.value = 0.0;
+    mesh.material.uniforms.energy.value = 0.75;
+    mesh.material.uniforms.perceptualSpread.value = 0.0;
+    mesh.material.uniforms.spectralSpread.value = 0.0;
   }
+
 }
 
 function onWindowResize() {
@@ -184,3 +173,18 @@ onMounted(() => {
 })
 
 </script>
+
+<style lang="scss" scoped>
+
+.container-decription {
+  width:100%;
+  position: absolute;
+}
+.description {
+  position: relative;
+  flex-direction: column;
+  display:flex;
+  align-items: flex-end;
+  padding: 10px;
+}
+</style>

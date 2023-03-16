@@ -24,25 +24,23 @@ const songs = [
     "name": "Leaves"
   }, 
   {
-    "file": "02-Wildflowers",
-    "name": "Wildflowers"
-  }, 
-  {
     "file": "03-No",
     "name": "No"
-  }, 
-  {
-    "file": "04-Why-Didn-t-You-Save-Me",
-    "name": "Why didn't you save me"
-  }, 
+  },
   {
     "file": "05-Sunder",
     "name": "Sunder"
   }, 
   {
+    "file": "02-Wildflowers",
+    "name": "Wildflowers"
+  }, 
+  
+  {
     "file": "06-America-I-m-for-the-Birds",
     "name": "America, I'm for the birds"
   }, 
+  /*
   {
     "file": "07-Pass-the-Time",
     "name": "Pass the time"
@@ -55,6 +53,11 @@ const songs = [
     "file": "09-I-Got-a",
     "name": "I got a"
   }, 
+  */
+  {
+    "file": "template",
+    "name": "Template File"
+  }
 ];
 
 songs.forEach((song, i) => {
