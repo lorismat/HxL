@@ -1,6 +1,6 @@
 <template>
   <div>
-    <canvas id="c1"></canvas>
+    <canvas :id="props.id"></canvas>
   </div>
 </template>
 
@@ -8,15 +8,21 @@
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+});
+
 let stats;
 let scene, renderer, camera, canvas, mesh;
-let inc = 0;
 
 const signals = useState('signals');
-
 const debug = false;
 
-let minArray = [0];
+// incrementing frequencies and init array
+let inc = [0, 0, 0];
 
 function init() {
   scene = new THREE.Scene();
@@ -27,7 +33,7 @@ function init() {
     3000
   );
 
-  canvas = document.getElementById("c1");
+  canvas = document.getElementById(props.id);
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas, alpha: true });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -40,17 +46,14 @@ function init() {
   stats = new Stats();
   if (debug) document.body.appendChild( stats.dom );
 
-  // to improve
-  const arrSize = signals.value.arrSize;
-
-  // create shader material
   const material = new THREE.ShaderMaterial({
     transparent:true,
     side: THREE.DoubleSide,
     uniforms: {
-      fArray: { value: new Float32Array(arrSize) },
-      u_time: { value: 0.0 },
-      u_inc: { value: 0.0 }
+      fArray: { value: new Float32Array(signals.value.arrSize) },
+      u_f0: { value: 0.0 },
+      u_f1: { value: 0.0 },
+      u_f2: { value: 0.0 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -61,64 +64,67 @@ function init() {
       }
     `,
     fragmentShader: `
-      uniform float fArray[${arrSize}];
-      uniform float u_time;
+      uniform float fArray[${signals.value.arrSize}];
       varying vec2 vUv;
-      uniform float u_inc;
+      uniform float u_f0;
+      uniform float u_f1;
+      uniform float u_f2;
 
-      // add noise 
       float random (vec2 st) {
-          return fract(sin(dot(st.xy,
-                              vec2(12.9808,78.233)))*
-              43758.5453123);
+        return fract(sin(dot(st.xy,
+                            vec2(12.9808,78.233)))*
+            43758.5453123);
       }
+
       vec2 random2(vec2 st){
-          st = vec2( dot(st,vec2(127.1,311.7)),
-                    dot(st,vec2(269.5,183.3)) );
-          return -1.0 + 2.0*fract(sin(st)*43758.5453123);
+        st = vec2( dot(st,vec2(127.1,311.7)),
+                  dot(st,vec2(269.5,183.3)) );
+        return -1.0 + 2.0*fract(sin(st)*43758.5453123);
       }
-      // Gradient Noise by Inigo Quilez - iq/2013
-      // https://www.shadertoy.com/view/XdXGW8
+
       float noise(vec2 st) {
-          vec2 i = floor(st);
-          vec2 f = fract(st);
-          vec2 u = f*f*(3.0-2.0*f);
-          return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
-                          dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-                      mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
-                          dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+        vec2 i = floor(st);
+        vec2 f = fract(st);
+        vec2 u = f*f*(3.0-2.0*f);
+        return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+                        dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                    mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+                        dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
       }
 
       void main() {
 
         vec2 st = vUv;
-        vec2 store = vUv;
 
-        vec3 color = vec3(0.0);
-        float d = 0.0;
-
-        float size = float(${arrSize});
-
-        // Remap the space to -1. to 1.
-        st = st * 2. - 1.;
-
-        d = length( abs(st) );
-        // vec3 col = vec3(fract(d*size));
+        st = st * 2. - 1.;        
         vec3 col = vec3(1.);
 
-        // float val = fArray[ int(floor(store.y * size)) ];
+        float t = 0.007; // thickness
+        float smoothFactor = 0.003;
 
-        float val = fArray[ 0 ];
+        float val = fArray[0];
+        float val2 = fArray[1];
+        float val3 = fArray[2];
 
-        // val = min(val, 0.7); // normalize
-        // abs(noise(st + u_time * val * 0.1))
+        // remap fArray from 0 to 22050 to 0 to 1
+        val = val / 22050.0;
+        val2 = val2 / 22050.0;
+        val3 = val3 / 22050.0;
 
-        val = 0.5 + abs(noise(st + u_inc * 0.001 ) * val * 0.0008);
+        val = 0.5 + abs(noise(st/4. + u_f0 * 0.02 ) ) * 0.8;
+        val2 = 0.5 + abs(noise(st/4. + u_f1 * 0.02 ) ) * 0.8;
+        val3 = 0.5 + abs(noise(st/4. + u_f2 * 0.02 ) ) * 0.8;
 
-        float t = 0.01; // thickness
+        fArray[0] + fArray[1] + fArray[2] == 0. ? val = val2 = val3 = 0.75 : val = val;
 
-        col = mix(col, vec3(0.0), step(val, length( abs(st) )));
-        col = mix(col, vec3(1.0), step(val + t, length( abs(st) )));
+        col = mix(col, vec3(0.0), smoothstep(val, val + smoothFactor, length( abs(st) )));
+        col = mix(col, vec3(1.0), smoothstep(val + t, val + smoothFactor + t, length( abs(st) )));
+
+        col = mix(col, vec3(0.0), smoothstep(val2, val2 + smoothFactor, length( abs(st) )));
+        col = mix(col, vec3(1.0), smoothstep(val2 + t, val2 + smoothFactor + t, length( abs(st) )));
+
+        col = mix(col, vec3(0.0), smoothstep(val3, val3 + smoothFactor, length( abs(st) )));
+        col = mix(col, vec3(1.0), smoothstep(val3 + t, val3 + smoothFactor + t, length( abs(st) )));
 
         col = 1. - col;
 
@@ -139,30 +145,30 @@ function animate() {
   renderer.render(scene, camera);
   stats.update();
 
-  // add time uniform
-  const time = performance.now() / 1000;
-  mesh.material.uniforms.u_time.value = time;
-
-  if (signals.value.powerSpectrum != undefined) {
-
+  if (signals.value.rms != undefined && signals.value.rms > 0) {
     const fArray = signals.value.powerSpectrum;
-    minArray = [];
-
-    for (let i = 0; i < fArray.length; i += 1) {
-      minArray.push(fArray[i]);
+    for (let i = 0; i < fArray.length; i++) {
+      fArray[i] = Math.abs(fArray[i]);
+      if (fArray[i] > 100) {
+        inc[i] += 2;
+      } else if (fArray[i] > 0.5) {
+        inc[i] += 0.1;
+      } else if (fArray[i] == 0) {
+        inc[i] = 0.75;
+      }
     }
 
-    minArray[0] > 0 ? inc++ : '';
-    mesh.material.uniforms.fArray.value = minArray;
-    mesh.material.uniforms.u_inc.value = inc;
-    // mesh.material.uniforms.u_inc.value = THREE.MathUtils.mapLinear(minArray[0], 0, 100, 0, 1);
-    // logarithm with js
-    // mesh.material.uniforms.u_inc.value = Math.log(minArray[0]);
-
-    console.log(minArray[0]);
-   
+    mesh.material.uniforms.fArray.value = fArray;
+    mesh.material.uniforms.u_f0.value = inc[0];
+    mesh.material.uniforms.u_f1.value = inc[1];
+    mesh.material.uniforms.u_f2.value = inc[2];
+  } else {
+    const fArray = [];
+    for (let i = 0; i < signals.value.arrSize; i++) {
+      fArray.push(0);
+    }
+    mesh.material.uniforms.fArray.value = fArray;
   }
-
 }
 
 function onWindowResize() {

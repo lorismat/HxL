@@ -44,3 +44,18 @@ canvas {
 .hl-pointer {
   z-index: 1;
 }
+
+.index {
+  z-index: 2;
+  position: absolute;
+  padding: 10px;
+}
+
+// cursor in the list / to modify in later
+.el {
+  cursor:pointer;
+}
+
+.now {
+  padding: 20px 0;
+}
