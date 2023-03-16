@@ -1,12 +1,20 @@
 <template>
   <div>
-    <canvas id="c1"></canvas>
+    <canvas :id="props.id"></canvas>
   </div>
 </template>
 
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+});
+
 
 let stats;
 let scene, renderer, camera, canvas;
@@ -27,7 +35,7 @@ function init() {
     3000
   );
 
-  canvas = document.getElementById("c1");
+  canvas = document.getElementById(props.id);
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
   
@@ -133,9 +141,9 @@ function animate() {
 
     // taking the first value of the array to check if there is sound or not to rotate the sphere
     if (minArray[0] != 0) {
-      mesh.rotation.y += 0.0002; 
-      mesh.rotation.x += 0.0002;
-      mesh.rotation.z += 0.0002;
+      //mesh.rotation.y += 0.0002; 
+      //mesh.rotation.x += 0.0002;
+      //mesh.rotation.z += 0.0002;
     } 
   } 
 

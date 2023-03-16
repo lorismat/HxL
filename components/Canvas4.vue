@@ -1,6 +1,6 @@
 <template>
   <div>
-    <canvas id="c1"></canvas>
+    <canvas :id="props.id"></canvas>
   </div>
 </template>
 
@@ -16,6 +16,13 @@ import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { SimplexNoise } from 'three/examples/jsm/math/SimplexNoise.js';
+
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+});
 
 let camera, scene, targetScene, renderer, controls, canvas, meshSphere, stats;
 let renderTarget;
@@ -41,7 +48,7 @@ const noise = new SimplexNoise();
 // -- end of noise for points
 
 let inc = 0;
-const debug = true;
+const debug = false;
 
 function init() {
   scene = new THREE.Scene();
@@ -52,7 +59,7 @@ function init() {
     3000
   );
 
-  canvas = document.getElementById("c1");
+  canvas = document.getElementById(props.id);
 
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
@@ -219,7 +226,6 @@ function animate() {
     geometryPoints.attributes.position.needsUpdate = true;
   }
 
-  console.log(signals.value.powerSpectrum[1]);
 
   meshSphere.rotation.x = -Math.PI;
   meshSphere.rotation.y = Math.PI / 2;

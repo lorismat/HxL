@@ -1,12 +1,19 @@
 <template>
   <div>
-    <canvas id="c1"></canvas>
+    <canvas :id="props.id"></canvas>
   </div>
 </template>
 
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+});
 
 let stats;
 let scene, renderer, camera, canvas, mesh;
@@ -27,7 +34,7 @@ function init() {
     3000
   );
 
-  canvas = document.getElementById("c1");
+  canvas = document.getElementById(props.id);
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas, alpha: true });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -159,7 +166,6 @@ function animate() {
     // logarithm with js
     // mesh.material.uniforms.u_inc.value = Math.log(minArray[0]);
 
-    console.log(minArray[0]);
    
   }
 

@@ -54,7 +54,7 @@ const noise = new SimplexNoise();
 // -- end of noise for points
 
 let inc = 0;
-const debug = true;
+const debug = false;
 
 function init() {
   scene = new THREE.Scene();
