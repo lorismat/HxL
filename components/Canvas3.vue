@@ -25,6 +25,9 @@ const props = defineProps({
 let camera, scene, renderer, canvas, stats;
 let mesh, pivot;
 
+const reqID = useState('reqID');
+
+
 const signals = useState('signals');
 
 const debug = false;
@@ -132,7 +135,7 @@ function init() {
 }
 
 function animate() {
-  requestAnimationFrame(animate);
+  reqID.value = requestAnimationFrame(animate);
 
   const time = performance.now() * 0.001;
   inc += 0.001;
@@ -177,6 +180,11 @@ function onWindowResize() {
 }
 
 onMounted(() => {
+
+  if (reqID.value != undefined && reqID.value != 0) {
+    cancelAnimationFrame(reqID.value);
+  }
+
   window.addEventListener("resize", onWindowResize);
   init();
   animate();

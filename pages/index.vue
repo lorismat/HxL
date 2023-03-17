@@ -3,11 +3,12 @@
   <IndexTable />
   
   <main>
-    <Canvas1 v-if="cv == 1" @click="triggerSound" id="c1" />
-    <Canvas2 v-if="cv == 2" @click="triggerSound" id="c2" />
-    <Canvas3 v-if="cv == 3" @click="triggerSound" id="c3" />
-    <Canvas4 v-if="cv == 4" @click="triggerSound" id="c4" />
-    <Canvas5 v-if="cv == 5" @click="triggerSound" id="c5" />
+    <Canvas1 v-if="cv == 1" @click="triggerSound" id="c-3843920043893" />
+    <Canvas2 v-if="cv == 2" @click="triggerSound" id="c-4754729020181" />
+    <Canvas3 v-if="cv == 3" @click="triggerSound" id="c-4858930288500" />
+    <Canvas4 v-if="cv == 4" @click="triggerSound" id="c-8588993995054" />
+    <Canvas5 v-if="cv == 5" @click="triggerSound" id="c-9000003294835" />
+    <CanvasTemplateFrequencies v-if="cv == 6" @click="triggerSound" id="c-649204859568" />
 
     <!-- 
       <Canvas6 v-if="cv == 6" @click="triggerSound" id="c6" />
@@ -17,8 +18,6 @@
     -->
     
 
-    <CanvasTemplateFrequencies v-if="cv == 6" @click="triggerSound" id="c10" />
-
     <!--
       b7 / 
     -->
@@ -27,7 +26,7 @@
       loop
       crossorigin="anonymous"
       id="audio"
-      :src="activeAudio"
+      :src="`sounds/nicolas-jaar/${activeAudio.file}.mp3`"
     ></audio>
 
   </main>
@@ -50,7 +49,14 @@ const cv = useState('cv', () => {
 });
 
 const activeAudio = useState('activeAudio', () => {
-  return 'sounds/nicolas-jaar/01-Leaves.mp3';
+  return {
+    "file": "Wildflowers",
+    "name": "Wildflowers"  
+  }
+});
+
+const reqID = useState('reqID', () => {
+  return 0;
 });
 
 let audio;
@@ -79,7 +85,6 @@ function triggerSound() {
           signals.value.energy = features.energy; // value between 0 and buffer size, to clamp
           signals.value.perceptualSpread = features.perceptualSpread; // 0 - 1, varies slowly
           signals.value.spectralSpread = features.spectralSpread; // 
-
         },
       });
       analyzer.start();

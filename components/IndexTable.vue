@@ -16,44 +16,31 @@
 
 <script setup>
 
-const nowPlaying = ref('Leaves');
+const activeAudio = useState('activeAudio');
+const nowPlaying = ref(activeAudio.value.name);
+
 // create element array dynamically as function
 const songs = [
   {
-    "file": "01-Leaves",
-    "name": "Leaves"
+    "file": "Wildflowers",
+    "name": "Wildflowers"
   }, 
   {
-    "file": "03-No",
+    "file": "No",
     "name": "No"
   },
   {
-    "file": "05-Sunder",
+    "file": "Sunder",
     "name": "Sunder"
   }, 
   {
-    "file": "02-Wildflowers",
-    "name": "Wildflowers"
-  }, 
-  
-  {
-    "file": "06-America-I-m-for-the-Birds",
+    "file": "America-I-m-for-the-Birds",
     "name": "America, I'm for the birds"
   }, 
-  /*
   {
-    "file": "07-Pass-the-Time",
-    "name": "Pass the time"
-  }, 
-  {
-    "file": "08-Tourists",
-    "name": "Tourists"
-  }, 
-  {
-    "file": "09-I-Got-a",
-    "name": "I got a"
-  }, 
-  */
+    "file": "Leaves",
+    "name": "Leaves"
+  },
   {
     "file": "template",
     "name": "Template File"
@@ -66,9 +53,9 @@ songs.forEach((song, i) => {
 });
 
 function playElement(e) {
-  const activeAudio = useState('activeAudio');
   nowPlaying.value = e.target.dataset.name;
-  activeAudio.value = `sounds/nicolas-jaar/${e.target.dataset.song}.mp3`;
+  activeAudio.value.file = e.target.dataset.song;
+  activeAudio.value.name = e.target.dataset.name;
   const cv = useState('cv');
   cv.value = e.target.dataset.number;
 }

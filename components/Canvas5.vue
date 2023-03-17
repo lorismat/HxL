@@ -20,6 +20,9 @@ let stats;
 let scene, renderer, camera, canvas;
 let mesh;
 
+const reqID = useState('reqID');
+
+
 const debug = false;
 
 const signals = useState('signals');
@@ -127,7 +130,7 @@ function init() {
 }
 
 function animate() {
-  requestAnimationFrame(animate);
+  reqID.value = requestAnimationFrame(animate);
   renderer.render(scene, camera);
   stats.update();
 
@@ -160,6 +163,12 @@ function onWindowResize() {
 }
 
 onMounted(() => {
+
+  if (reqID.value != undefined && reqID.value != 0) {
+    cancelAnimationFrame(reqID.value);
+  }
+
+
   window.addEventListener("resize", onWindowResize);
   init();
   animate();

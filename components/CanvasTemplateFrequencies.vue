@@ -31,8 +31,10 @@ const props = defineProps({
 let stats;
 let scene, renderer, camera, canvas, mesh;
 
+const reqID = useState('reqID');
+
 const signals = useState('signals');
-const debug = false;
+const debug = true;
 
 function init() {
   scene = new THREE.Scene();
@@ -140,7 +142,7 @@ function init() {
 }
 
 function animate() {
-  requestAnimationFrame(animate);
+  reqID.value = requestAnimationFrame(animate);
   renderer.render(scene, camera);
   stats.update();
 
@@ -167,9 +169,15 @@ function onWindowResize() {
 }
 
 onMounted(() => {
+
+  if (reqID.value != undefined && reqID.value != 0) {
+    cancelAnimationFrame(reqID.value);
+  }
+  
   window.addEventListener("resize", onWindowResize);
   init();
   animate();
+  
 })
 
 </script>
