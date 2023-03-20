@@ -1,7 +1,12 @@
 <template>
   <div>
-    <canvas :id="props.id"></canvas>
+    <div>
+      <canvas :id="props.id"></canvas>
+    </div>
+
+    
   </div>
+  
 </template>
 
 <script setup>
@@ -15,19 +20,13 @@ const props = defineProps({
   }
 });
 
-
 let stats;
-let scene, renderer, camera, canvas;
-let mesh;
+let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
 
-
-const debug = false;
-
 const signals = useState('signals');
-
-let minArray = [0];
+const debug = false;
 
 function init() {
   scene = new THREE.Scene();
@@ -41,28 +40,21 @@ function init() {
   canvas = document.getElementById(props.id);
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
-  
   renderer.setSize(window.innerWidth, window.innerHeight);
-
-  renderer.alpha = true;
 
   renderer.setClearColor(0x000000, 1.);
 
-  camera.position.set(0,0,1200);
+  camera.position.set(0,0,1000);
   camera.lookAt( scene.position );
 
   stats = new Stats();
   if (debug) document.body.appendChild( stats.dom );
 
-  const arrSize = signals.value.arrSize;
-
   const material = new THREE.ShaderMaterial({
-    transparent:true,
-    side: THREE.DoubleSide,
     uniforms: {
-      time: { value: 0 },
-      fArray: { value: new Float32Array(arrSize) },
-
+      energy: { value: 0.0 },
+      cArray: { value: new Float32Array(12) },
+      u_time: { value: 0.0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -73,59 +65,96 @@ function init() {
       }
     `,
     fragmentShader: `
-      uniform float time;
-      uniform float fArray[${arrSize}];
-      
 
-      float plot(vec2 st, float pct){
-        return  smoothstep( pct-0.1, pct, st.y) -
-                smoothstep( pct, pct+0.1, st.y);
-      }
-
+      uniform float u_time;
+      uniform float energy;
+      uniform float cArray[12];
 
       varying vec2 vUv;
+
+      float smoothFactor = 0.003;
+
+      float random (vec2 st) {
+        return fract(sin(dot(st.xy,
+                            vec2(12.9808,78.233)))*
+            43758.5453123);
+      }
+
+      vec2 random2(vec2 st){
+        st = vec2( dot(st,vec2(127.1,311.7)),
+                  dot(st,vec2(269.5,183.3)) );
+        return -1.0 + 2.0*fract(sin(st)*43758.5453123);
+      }
+
+      float noise(vec2 st) {
+        vec2 i = floor(st);
+        vec2 f = fract(st);
+        vec2 u = f*f*(3.0-2.0*f);
+        return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+                        dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                    mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+                        dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+      }
+
+      vec3 line(vec2 st, float position, float thickness, float sign, float noiseAmplitude, float c) {
+        float t = st.y * pow(noiseAmplitude, 4.) + 0.2;
+        float noisyPos = noise(t + st * noiseAmplitude) * noiseAmplitude * 1.;
+        noisyPos += noise(t + st * noiseAmplitude * 4.) * noiseAmplitude * 1.;
+        position += noisyPos * pow(c, 40.);
+        vec3 line = vec3(smoothstep(1.- position - smoothFactor, 1.- position, st.y) + 
+                        1. - smoothstep(1. - position - thickness - smoothFactor, 1. - position - thickness,st.y));
+        return line;
+      }
+
       void main() {
 
-        vec2 st = vUv;
         vec2 store = vUv;
-
-        float size = float(${arrSize});
-        st.y = fract(st.y * size);
-
-        // float y = st.x;
-        float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) * 0.00009 * 4. / 10. + 0.5;
-    
-        // float y = sin(st.x * 4. * 3.14 * 10. + time * 8.) * clamp(abs( cArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) * 0.00009 * 4. / 10. + 0.5;
-
-        // y = st.x;
-        float pct = plot(st,y);
+        vec2 st = vUv;
+        vec2 coord = vUv;
+        float r = 0.75;
         
-        vec4 col = vec4(1.);
-        vec4 col2 = vec4(1.);
-        col = (1.0-pct)*col+pct*vec4(vec3(0.), 0.1);
-        col2 = (1.0-pct)*col2+pct*vec4(vec3(0.), 0.9);
+        store = store * 2. - 1.;
+        vec3 col = vec3(1.);
 
-        // effect extra 1
-        clamp(abs(fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) > 2000. 
-            && 
-        clamp(abs(fArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) < 6000. 
-            ? 
-          col = col : col = col2;
+        float size = 12.;
+        st.y = fract(st.y * size);
+      
+        float t = 0.007; // thickness
+        
 
-        // clamp(abs( cArray[ int(floor(store.y * size)) ] * 500.  ), 0., 12000.) > 2000. ? col = col : col = col2;
+        float lineT = 0.1;
 
-        gl_FragColor = 1.-col;
+        float c = cArray[int(coord.y * size)];
+
+        // float spread = 0.2 + 1. * noise(vec2(cArray[int(coord.y * size)]) * 0.1);
+
+        // col *= step(0.5, st.y) + 1. - step(0.5 - spread * c, st.y);
+        // col *= step(0.5 + spread * c, st.y) + 1. - step(0.5, st.y);
+
+        vec3 line = line(
+          st, // st
+          0.5, // position
+          0.2, // thickness
+          1., // sign
+          0.1 + pow(c, 4.) * 0.5, // noiseAmplitude
+          c // c
+        );
+
+        col = mix(col, vec3(0.), line);
+
+        col = col;
+
+        col = mix(col, vec3(1.), smoothstep(r - t, r - t + smoothFactor,length( abs(store) )));
+        col = mix(col, vec3(0.), smoothstep(r, r + smoothFactor, length( abs(store) )));
+
+        gl_FragColor = vec4(col, 1.);
       }
     `,
   });
 
-  const geometry = new THREE.SphereGeometry(500, 64, 64);
+  const geometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
-
-  mesh.rotation.y =  0; 
-  mesh.rotation.x = Math.PI / 4;
-  mesh.rotation.z = Math.PI / 4;
   
 }
 
@@ -134,25 +163,14 @@ function animate() {
   renderer.render(scene, camera);
   stats.update();
 
-  mesh.material.uniforms.time.value = performance.now() / 1000;
+  // add time uniform
+  const time = performance.now() * 0.001;
+  mesh.material.uniforms.u_time.value = time;
 
-  if (signals.value.powerSpectrum != undefined) {
-
-    const fArray = signals.value.powerSpectrum;
-    minArray = [];
-    for (let i = 0; i < fArray.length; i += 1) {
-      minArray.push(fArray[i]);
-    }
-
-    mesh.material.uniforms.fArray.value = minArray;
-
-    // taking the first value of the array to check if there is sound or not to rotate the sphere
-    if (minArray[0] != 0) {
-      //mesh.rotation.y += 0.0002; 
-      //mesh.rotation.x += 0.0002;
-      //mesh.rotation.z += 0.0002;
-    } 
-  } 
+  if (signals.value.rms != undefined && signals.value.rms > 0) {
+    const chroma = signals.value.chroma;
+    mesh.material.uniforms.cArray.value = chroma;
+  }
 
 }
 
@@ -167,11 +185,11 @@ onMounted(() => {
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
   }
-
-
+  
   window.addEventListener("resize", onWindowResize);
   init();
   animate();
+  
 })
 
 </script>

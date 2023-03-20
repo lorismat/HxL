@@ -8,16 +8,12 @@
     <Canvas3 v-if="cv == 3" @click="triggerSound" id="c-4858930288500" />
     <Canvas4 v-if="cv == 4" @click="triggerSound" id="c-8588993995054" />
     <Canvas5 v-if="cv == 5" @click="triggerSound" id="c-9000003294835" />
-    <CanvasTemplateFrequencies v-if="cv == 6" @click="triggerSound" id="c-649204859568" />
+    <Canvas6 v-if="cv == 6" @click="triggerSound" id="c-8475923298212" />
 
-    <!-- 
-      <Canvas6 v-if="cv == 6" @click="triggerSound" id="c6" />
-      <Canvas7 v-if="cv == 7" @click="triggerSound" id="c7" />
-      <Canvas8 v-if="cv == 8" @click="triggerSound" id="c8" />
-      <Canvas9 v-if="cv == 9" @click="triggerSound" id="c9" />
-    -->
+    <CanvasTemplateFrequencies v-if="cv == 7" @click="triggerSound" id="c-649204859568" />
+    <CanvasTemplateSignals v-if="cv == 8" @click="triggerSound" id="c-7685438291028" />
+    <CanvasTemplate3D v-if="cv == 9" @click="triggerSound" id="c-8593847103947" />
     
-
     <!--
       b7 / 
     -->
@@ -75,16 +71,15 @@ function triggerSound() {
         audioContext: audioContext,
         source: source,
         bufferSize: Math.pow(2, 8), // 256
-        featureExtractors: ["powerSpectrum", "rms", "zcr", "energy", "perceptualSpread", "spectralSpread"],
+        featureExtractors: ["powerSpectrum", "rms", "zcr", "energy", "perceptualSpread", "spectralSpread", "chroma"],
         callback: (features) => {
-          // signals.value.powerSpectrum = features.powerSpectrum; // size: 128, arrValues between 0 and 44100/2 = 22050
-          // signals.value.powerSpectrum = features.powerSpectrum.filter((_, i) => i % 2 === 0); // size: 64
-          signals.value.powerSpectrum = features.powerSpectrum; // size: 128
+          signals.value.powerSpectrum = features.powerSpectrum; // size: 128, arrValues between 0 and 44100/2 = 22050
           signals.value.rms = features.rms; // 0 - 1
           signals.value.zcr = features.zcr; // value between (buffer size / 2) - 1, to clamp
           signals.value.energy = features.energy; // value between 0 and buffer size, to clamp
           signals.value.perceptualSpread = features.perceptualSpread; // 0 - 1, varies slowly
           signals.value.spectralSpread = features.spectralSpread; // 
+          signals.value.chroma = features.chroma; // 12 values, 0 - 1
         },
       });
       analyzer.start();

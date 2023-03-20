@@ -59,3 +59,17 @@ canvas {
 .now {
   padding: 20px 0;
 }
+
+// for template visualizations
+
+.container-decription {
+  width:100%;
+  position: absolute;
+}
+.description {
+  position: relative;
+  flex-direction: column;
+  display:flex;
+  align-items: flex-end;
+  padding: 10px;
+}
