@@ -10,7 +10,7 @@
 
 
       {{ song.name }}
-      
+
     </div>
 
     <NowPlaying :song="nowPlaying" class="now"/>
@@ -45,20 +45,24 @@ const songs = [
     "name": "Leaves"
   },
   {
+    "file": "Fight",
+    "name": "Fight"
+  },
+  {
+    "file": "Pass-the-Time",
+    "name": "Pass The Time"
+  },
+  {
+    "file": "Problem-with-the-sun",
+    "name": "Problem With The Sun"
+  },
+  {
+    "file": "Mi-Mujer",
+    "name": "Mi Mujer"
+  },
+  {
     "file": "No-one-is-looking-at-U",
     "name": "No One is Looking at U"
-  },
-  {
-    "file": "template",
-    "name": "Template Frequencies"
-  },
-  {
-    "file": "template",
-    "name": "Template Signals"
-  },
-  {
-    "file": "template",
-    "name": "Template 3D"
   },
 ];
 

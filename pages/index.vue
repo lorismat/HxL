@@ -9,10 +9,10 @@
     <Canvas4 v-if="cv == 4" @click="triggerSound" id="c-8588993995054" />
     <Canvas5 v-if="cv == 5" @click="triggerSound" id="c-9000003294835" />
     <Canvas6 v-if="cv == 6" @click="triggerSound" id="c-8475923298212" />
-
-    <CanvasTemplateFrequencies v-if="cv == 7" @click="triggerSound" id="c-649204859568" />
-    <CanvasTemplateSignals v-if="cv == 8" @click="triggerSound" id="c-7685438291028" />
-    <CanvasTemplate3D v-if="cv == 9" @click="triggerSound" id="c-8593847103947" />
+    <Canvas7 v-if="cv == 7" @click="triggerSound" id="c-649204859568" />
+    <Canvas8 v-if="cv == 8" @click="triggerSound" id="c-7685438291028" />
+    <Canvas9 v-if="cv == 9" @click="triggerSound" id="c-8593847103947" />
+    <Canvas10 v-if="cv == 10" @click="triggerSound" id="c-473201284953" />
     
     <!--
       b7 / 
@@ -79,7 +79,9 @@ function triggerSound() {
           signals.value.energy = features.energy; // value between 0 and buffer size, to clamp
           signals.value.perceptualSpread = features.perceptualSpread; // 0 - 1, varies slowly
           signals.value.spectralSpread = features.spectralSpread; // 
-          signals.value.chroma = features.chroma; // 12 values, 0 - 1
+          // signals.value.chroma = features.chroma; // 12 values, 0 - 1
+          // create an array where each value of the chroma array is repeated twice
+          signals.value.chroma = features.chroma.flatMap((x) => [x, x]);
         },
       });
       analyzer.start();

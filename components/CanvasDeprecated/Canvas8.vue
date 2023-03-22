@@ -79,7 +79,15 @@ function init() {
       uniform float u_inc2;
       uniform float u_inc3;
 
-      // add noise 
+      float sdCircle( in vec2 p, in float r ) {
+        return length(p) - r;
+      }
+
+      float smin(float a, float b, float k) {
+        float h = max(k - abs(a-b), 0.) / k;
+        return min(a, b) - h*h*h*k*1./6.;
+      }
+
       float random (vec2 st) {
           return fract(sin(dot(st.xy,
                               vec2(12.9808,78.233)))*
@@ -90,8 +98,7 @@ function init() {
                     dot(st,vec2(269.5,183.3)) );
           return -1.0 + 2.0*fract(sin(st)*43758.5453123);
       }
-      // Gradient Noise by Inigo Quilez - iq/2013
-      // https://www.shadertoy.com/view/XdXGW8
+      
       float noise(vec2 st) {
           vec2 i = floor(st);
           vec2 f = fract(st);
@@ -116,7 +123,6 @@ function init() {
         f += sin(a * 3. * -abs(noise(st)) ) * amp;
         float circle = step(f, r);
         col *= circle;
-
 
         /*
         st = vec2(0.5)-st;

@@ -4,7 +4,13 @@
       <canvas :id="props.id"></canvas>
     </div>
 
-    
+    <div class="container-description">
+      <div class="description">
+        <div>rms</div>
+        <div>energy</div>
+        <div>spectralSpread</div>
+      </div>
+    </div>
   </div>
   
 </template>
@@ -22,6 +28,9 @@ const props = defineProps({
 
 let stats;
 let scene, renderer, camera, canvas, mesh;
+
+let rArrLength = 0;
+let rmsArr = [0];
 
 const reqID = useState('reqID');
 
@@ -50,13 +59,15 @@ function init() {
   stats = new Stats();
   if (debug) document.body.appendChild( stats.dom );
 
-  const chromaArrSize = 24;
-
   const material = new THREE.ShaderMaterial({
     uniforms: {
       rms: { value: 0.0 },
-      cArray: { value: new Float32Array(chromaArrSize) },
-      u_time: { value: 0.0 },
+      zcr: { value: 0.0 },
+      energy: { value: 0.0 },
+      perceptualSpread: { value: 0.0 },
+      spectralSpread: { value: 0.0 },
+      rArrLength: { value: 0.0 },
+      rArray: { value: new Float32Array(rmsArr.length) },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -67,14 +78,16 @@ function init() {
       }
     `,
     fragmentShader: `
-
-      uniform float u_time;
+    
       uniform float rms;
-      uniform float cArray[${chromaArrSize}];
-
+      uniform float zcr;
+      uniform float energy;
+      uniform float perceptualSpread;
+      uniform float spectralSpread;
       varying vec2 vUv;
+      uniform float rArrLength;
 
-      float smoothFactor = 0.003;
+      uniform float rArray[${rmsArr.length}];
 
       float random (vec2 st) {
         return fract(sin(dot(st.xy,
@@ -98,45 +111,43 @@ function init() {
                         dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
       }
 
+      float circle(vec2 st, vec2 coords, float r) {
+        return step(r, length(st - coords));
+      }
+
       void main() {
 
-        vec2 store = vUv;
         vec2 st = vUv;
-        vec2 coord = vUv;
-        float r = 0.75;
-        
-        store = store * 2. - 1.;
+        vec2 store = vUv;
+
+        store.y *= 3.;
+
+        // float size = float(${rArrLength});
+        // st.y = fract(st.y * 3.);
+        // st = st * 2. - 1.;
+
         vec3 col = vec3(1.);
-
-        float size = float(${chromaArrSize});
-        st.y = fract(st.y * size);
-      
+    
         float t = 0.007; // thickness
-        
-        float c = cArray[int(coord.y * size)];
+        float smoothFactor = 0.003;
 
-        col = mix(
-          vec3(0.), 
-          vec3(1.), 
-          smoothstep(0.52 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, 0.55 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, st.y) 
-          + 1. - smoothstep(0.44 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, 0.47 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, st.y)
-        );
+        // float rVal = rArray[int(store.y * size)];
+        // float arr[5] = float[](1.0, 2.0, 10., 3., 5.);
+        // col = mix(vec3(0.), vec3(1.), circle(st, vec2(random(vec2(floor(rArray[int(store.y * size)])))), 0.01 ));
+        // col = mix(vec3(0.), vec3(1.), circle(store, vec2(random(vec2(floor(arr[int(store.y * 5.)])))), 0.01 ));
 
-        col = 1.-col;
+        float arr[3] = float[](0.1, 0.2, 0.3);
 
-        col = mix(col, vec3(1.), smoothstep(r - t, r - t + smoothFactor,length( abs(store) )));
-        col = mix(col, vec3(0.), smoothstep(r, r + smoothFactor, length( abs(store) )));
+        // col = mix(vec3(0.), vec3(1.), circle(st, vec2(random(vec2(arr[int(floor(store.y * 10.)) ] ))), 0.1 ));
 
-        // tap
-        rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(store) ))) : col = col;
-        rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(store) ))) : col = col;
+        col = mix(vec3(0.), vec3(1.), circle(st, vec2(1.), 0.1 ));
 
         gl_FragColor = vec4(col, 1.);
       }
     `,
   });
 
-  const geometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
+  const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
   
@@ -147,15 +158,27 @@ function animate() {
   renderer.render(scene, camera);
   stats.update();
 
-  // add time uniform
-  const time = performance.now() * 0.001;
-  mesh.material.uniforms.u_time.value = time;
+  if (signals.value.rms != undefined && signals.value.rms > 0) {
+    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
+    mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
+    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
 
-  if (signals.value.rms != undefined) {
-    const chroma = signals.value.chroma;
-    mesh.material.uniforms.cArray.value = chroma;
-    console.log(chroma);
-    mesh.material.uniforms.rms.value = signals.value.rms;
+    if (signals.value.rms > 0.02) {
+      rmsArr.push(signals.value.rms);
+      mesh.material.uniforms.rArrLength.value = rmsArr.length;
+      mesh.material.uniforms.rArray.value = rmsArr;
+      
+    } 
+
+
+  } else {
+    mesh.material.uniforms.rms.value = 0.0;
+    mesh.material.uniforms.zcr.value = 0.0;
+    mesh.material.uniforms.energy.value = 0.75;
+    mesh.material.uniforms.perceptualSpread.value = 0.0;
+    mesh.material.uniforms.spectralSpread.value = 0.0;
   }
 
 }

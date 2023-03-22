@@ -3,8 +3,6 @@
     <div>
       <canvas :id="props.id"></canvas>
     </div>
-
-    
   </div>
   
 </template>
@@ -50,12 +48,13 @@ function init() {
   stats = new Stats();
   if (debug) document.body.appendChild( stats.dom );
 
-  const chromaArrSize = 24;
-
   const material = new THREE.ShaderMaterial({
     uniforms: {
       rms: { value: 0.0 },
-      cArray: { value: new Float32Array(chromaArrSize) },
+      zcr: { value: 0.0 },
+      energy: { value: 0.0 },
+      perceptualSpread: { value: 0.0 },
+      spectralSpread: { value: 0.0 },
       u_time: { value: 0.0 },
     },
     vertexShader: `
@@ -67,14 +66,14 @@ function init() {
       }
     `,
     fragmentShader: `
-
+    
       uniform float u_time;
       uniform float rms;
-      uniform float cArray[${chromaArrSize}];
-
+      uniform float zcr;
+      uniform float energy;
+      uniform float perceptualSpread;
+      uniform float spectralSpread;
       varying vec2 vUv;
-
-      float smoothFactor = 0.003;
 
       float random (vec2 st) {
         return fract(sin(dot(st.xy,
@@ -100,43 +99,54 @@ function init() {
 
       void main() {
 
-        vec2 store = vUv;
         vec2 st = vUv;
-        vec2 coord = vUv;
-        float r = 0.75;
-        
-        store = store * 2. - 1.;
+        vec2 store = vUv;
+
+        st = st * 2. - 1.;
         vec3 col = vec3(1.);
-
-        float size = float(${chromaArrSize});
-        st.y = fract(st.y * size);
-      
+    
         float t = 0.007; // thickness
-        
-        float c = cArray[int(coord.y * size)];
+        float smoothFactor = 0.003;
+        float r = 0.75;
 
-        col = mix(
-          vec3(0.), 
-          vec3(1.), 
-          smoothstep(0.52 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, 0.55 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, st.y) 
-          + 1. - smoothstep(0.44 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, 0.47 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, st.y)
+        col = mix(vec3(0.), vec3(1.), 1. - smoothstep(0.2, 0.2 + smoothFactor, length( abs(st - vec2(0.2)) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(0.2 - t, 0.2 - t + smoothFactor, length( abs(st - vec2(0.2)) )));
+        
+        vec3 col2 = mix(col, vec3(1.), 1. - smoothstep( 
+          0.58 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01, 
+          0.58 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01 + smoothFactor,
+          store.y) 
+        );
+        
+        col2 = mix(col2, vec3(0.), 1. - smoothstep( 
+          0.576 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01, 
+          0.576 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01 + smoothFactor,
+          store.y) 
+        );
+        col2 = mix(col2, vec3(0.99), 1. - smoothstep( 
+          0.5 + sin(st.x * 5. + perceptualSpread * noise(st + u_time * 2.) * 40.) * 0.01, 
+          0.5 + sin(st.x * 5. + perceptualSpread * noise(st + u_time * 2.) * 40.) * 0.01 + smoothFactor,
+          store.y) 
+        );
+        col2 = mix(col2, vec3(0.), 1. - smoothstep( 
+          0.425 + sin(st.x * 10. + spectralSpread * noise(st + u_time) * 40.) * 0.01, 
+          0.425 + sin(st.x * 10. + spectralSpread * noise(st + u_time) * 40.) * 0.01 + smoothFactor, 
+          store.y) 
         );
 
-        col = 1.-col;
-
-        col = mix(col, vec3(1.), smoothstep(r - t, r - t + smoothFactor,length( abs(store) )));
-        col = mix(col, vec3(0.), smoothstep(r, r + smoothFactor, length( abs(store) )));
+        col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) )));
+        col = mix(col, col2, 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) )));
 
         // tap
-        rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(store) ))) : col = col;
-        rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(store) ))) : col = col;
+        rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
+        rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) ))) : col = col;
 
         gl_FragColor = vec4(col, 1.);
       }
     `,
   });
 
-  const geometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
+  const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
   
@@ -147,15 +157,22 @@ function animate() {
   renderer.render(scene, camera);
   stats.update();
 
-  // add time uniform
   const time = performance.now() * 0.001;
+  // update uniform time
   mesh.material.uniforms.u_time.value = time;
 
-  if (signals.value.rms != undefined) {
-    const chroma = signals.value.chroma;
-    mesh.material.uniforms.cArray.value = chroma;
-    console.log(chroma);
-    mesh.material.uniforms.rms.value = signals.value.rms;
+  if (signals.value.rms != undefined && signals.value.rms > 0) {
+    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
+    mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
+    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+  } else {
+    mesh.material.uniforms.rms.value = 0.0;
+    mesh.material.uniforms.zcr.value = 0.0;
+    mesh.material.uniforms.energy.value = 0.75;
+    mesh.material.uniforms.perceptualSpread.value = 0.0;
+    mesh.material.uniforms.spectralSpread.value = 0.0;
   }
 
 }

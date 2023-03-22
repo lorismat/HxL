@@ -123,7 +123,6 @@ function init() {
           
         float f = 0.05;
 
-
         float border = 0.02;
         float d = sdCircle(p,0.4);
 
