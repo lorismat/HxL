@@ -133,31 +133,27 @@ function init() {
         float d = sdCircle(p, 0.75*0.5);
 
         float dd = sdCircle(
-          m + vec2( sin(u_time * 20. * f) * 0.4, cos(u_time * 20. * f) * 0.4),
+          m + vec2( sin(u_time * 20. * f + u_time) * 0.4, cos(u_time * 20. * f) * 0.4),
           0.15 * 0.5
         );
 
-        float ddd = sdCircle(
-          m + vec2( sin(u_time * 20. * f) * 0.4, cos(u_time * 20. * f) * 0.4),
-          0.3 * 0.5
-        );
 
         float dddd = sdCircle(
           m + vec2( sin(u_time * 20. * f) * 0.4, cos(u_time * 20. * f) * 0.4),
           0.4 * 0.5
         );
 
-        col = mix(col, vec3(0.), smoothstep(0.,-0.001, smin(-d,dd, 0.05 + abs(sin(u_time)) * 0.2) - border/8. ));
-        col = mix(col, vec3(1., 0., 0.), smoothstep(-0.001,0., smin(-d,dd, 0.05 + abs(sin(u_time)) * 0.2) - border ));
+        col = mix(col, vec3(0.), smoothstep(0.,-0.001, smin(-d,dd, 0.05 + abs(sin(energy * 1. + u_time * 10.)) * 0.3) - border/8. ));
+        col = mix(col, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dd, 0.05 + abs(sin(energy * 1. + u_time * 10.)) * 0.3) - border ));
 
         // col2 = mix(col2, vec3(0., 0., 1.), smoothstep(0.,-0.001, smin(-d,ddd,0.1) - border/8. ));
         // col2 = mix(col2, vec3(1., 0., 0.), smoothstep(-0.001,0., smin(-d,ddd,0.1) - border ));
 
-        col2 = mix(col2, vec3(0.), smoothstep(0.,-0.001, smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 ) * 1. )) - border/8. ));
-        col2 = mix(col2, vec3(1., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 ) * 1. )) - border ));
+        col2 = mix(col2, vec3(0.), smoothstep(0.,-0.001, smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 + spectralSpread * 10. ) * 1. )) - border/8. ));
+        col2 = mix(col2, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 + spectralSpread * 10. ) * 1. )) - border ));
 
         col3 = mix(col3, vec3(0.), smoothstep(0.,-0.001, smin(-d,dddd, 0.05 + abs(noise( vec2(1.) * 10. + u_time * 0.1 ) * 1. )) - border/8. ));
-        col3 = mix(col3, vec3(1., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(1.) * 10. + u_time * 0.1 ) * 1. )) - border ));
+        col3 = mix(col3, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(1.) * 10. + u_time * 0.1 ) * 1. )) - border ));
 
         col += col2 + col3;
 
