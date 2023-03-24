@@ -53,18 +53,3 @@ onUnmounted(() => {
     window.removeEventListener('mousemove', onMouseMove)
 })
 </script>
-
-<style scoped>
-  .hl-pointer {
-    position: fixed;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity .3s;
-  }
-  body:hover .hl-pointer {
-    opacity: 1;
-  }
-  .hl-pointer__inner {
-    text-transform: uppercase;
-  }
-</style>

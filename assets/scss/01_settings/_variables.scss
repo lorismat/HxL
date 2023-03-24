@@ -1,0 +1,24 @@
+:root {
+    // Colors
+    --color-font: #fff;
+    --color-bg: #000;
+
+    // Typography
+    --font-family: Helvetica, Arial, sans-serif;
+    --font-size: 12px;
+    --line-height: 1.2;
+    --font-weight: 400;
+    --letter-spacing: 0;
+
+    // Spacing
+    --spacer: calc(1rem * var(--line-height));
+
+    @for $i from 1 through 8 {
+        --spacer-#{$i}: calc(var(--spacer)*#{$i});
+    }
+
+    --spacer-025:  calc(var(--spacer)*.25);
+    --spacer-05:  calc(var(--spacer)*.5);
+    --spacer-075:  calc(var(--spacer)*.75);
+    --spacer-1-05:  calc(var(--spacer)*1.5);    
+}

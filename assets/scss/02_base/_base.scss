@@ -1,0 +1,42 @@
+html, body {
+    margin:0;
+    height: 100%;
+    
+    background-color: var(--color-bg);
+    color: var(--color-font);
+
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+    line-height: var(--line-height);
+    font-weight: var(--font-weight);
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+    
+    box-sizing: border-box;
+    -ms-word-wrap: break-word;
+    word-wrap: break-word;
+
+    *,
+    *:before,
+    *:after {
+        box-sizing: border-box;
+        -ms-word-wrap: break-word;
+        word-wrap: break-word;
+    }
+}
+  
+/* Hide scrollbars */
+html {
+    -ms-overflow-style: none; /* IE */
+    scrollbar-width: none;  /* Firefox */
+}
+html::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+}

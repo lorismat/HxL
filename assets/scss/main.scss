@@ -1,32 +1,19 @@
-@import 'colors';
+@import '00_reset/reset';
 
-html, body {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 11px;
-  margin:0;
-  height: 100%;
-  background-color: var(--color-bg);
-  color: var(--color-font);
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
-}
+@import '01_settings/breakpoints';
+@import '01_settings/variables';
+@import '01_settings/fonts';
 
-body > div,
-body > div > div {
-  height: 100%;
-}
+@import '02_base/base';
 
-/* Hide scrollbars */
-html {
-  -ms-overflow-style: none; /* IE */
-  scrollbar-width: none;  /* Firefox */
-}
-html::-webkit-scrollbar { 
-  display: none;  /* Safari and Chrome */
-}
+@import '03_layout/grid';
+@import '03_layout/layout-base';
 
+@import '04_components/pointer';
+
+
+
+// Hacks
 main {
   height: 100%;
   cursor: none;
@@ -37,12 +24,6 @@ canvas {
   left:0;
   position:fixed;
   z-index: 0;
-}
-
-
-/* ZINDEX */
-.hl-pointer {
-  z-index: 1;
 }
 
 .index {
