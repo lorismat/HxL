@@ -1,7 +1,11 @@
 <template>
   <div>
-    <canvas :id="props.id"></canvas>
+    <div>
+      <canvas :id="props.id"></canvas>
+    </div>
+
   </div>
+  
 </template>
 
 <script setup>
@@ -17,15 +21,11 @@ const props = defineProps({
 
 let stats;
 let scene, renderer, camera, canvas, mesh;
-let inc= 0;
-let inc2 = 0;
-let inc3 = 0;
+
+const reqID = useState('reqID');
 
 const signals = useState('signals');
-
 const debug = false;
-
-let minArray = [0];
 
 function init() {
   scene = new THREE.Scene();
@@ -37,7 +37,7 @@ function init() {
   );
 
   canvas = document.getElementById(props.id);
-  renderer = new THREE.WebGLRenderer({ antialias : true, canvas, alpha: true });
+  renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -49,19 +49,14 @@ function init() {
   stats = new Stats();
   if (debug) document.body.appendChild( stats.dom );
 
-  // to improve
-  const arrSize = signals.value.arrSize;
-
-  // create shader material
   const material = new THREE.ShaderMaterial({
-    transparent:true,
-    side: THREE.DoubleSide,
     uniforms: {
-      fArray: { value: new Float32Array(arrSize) },
+      rms: { value: 0.0 },
+      zcr: { value: 0.0 },
+      energy: { value: 0.0 },
+      perceptualSpread: { value: 0.0 },
+      spectralSpread: { value: 0.0 },
       u_time: { value: 0.0 },
-      u_inc: { value: 0.0 },
-      u_inc2: { value: 0.0 },
-      u_inc3: { value: 0.0 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -72,158 +67,124 @@ function init() {
       }
     `,
     fragmentShader: `
-      uniform float fArray[${arrSize}];
+    
       uniform float u_time;
+      uniform float rms;
+      uniform float zcr;
+      uniform float energy;
+      uniform float perceptualSpread;
+      uniform float spectralSpread;
       varying vec2 vUv;
-      uniform float u_inc;
-      uniform float u_inc2;
-      uniform float u_inc3;
 
-      // add noise 
+      float sdCircle( in vec2 p, in float r ) {
+        return length(p) - r;
+      }
+
+      float smin(float a, float b, float k) {
+        float h = max(k - abs(a-b), 0.) / k;
+        return min(a, b) - h*h*h*k*1./6.;
+      }
+
       float random (vec2 st) {
-          return fract(sin(dot(st.xy,
-                              vec2(12.9808,78.233)))*
-              43758.5453123);
+        return fract(sin(dot(st.xy,
+                            vec2(12.9808,78.233)))*
+            43758.5453123);
       }
+
       vec2 random2(vec2 st){
-          st = vec2( dot(st,vec2(127.1,311.7)),
-                    dot(st,vec2(269.5,183.3)) );
-          return -1.0 + 2.0*fract(sin(st)*43758.5453123);
+        st = vec2( dot(st,vec2(127.1,311.7)),
+                  dot(st,vec2(269.5,183.3)) );
+        return -1.0 + 2.0*fract(sin(st)*43758.5453123);
       }
-      // Gradient Noise by Inigo Quilez - iq/2013
-      // https://www.shadertoy.com/view/XdXGW8
+
       float noise(vec2 st) {
-          vec2 i = floor(st);
-          vec2 f = fract(st);
-          vec2 u = f*f*(3.0-2.0*f);
-          return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
-                          dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-                      mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
-                          dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+        vec2 i = floor(st);
+        vec2 f = fract(st);
+        vec2 u = f*f*(3.0-2.0*f);
+        return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+                        dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                    mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+                        dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
       }
 
       void main() {
 
+        float pix = 0.001;
+
         vec2 st = vUv;
-        vec2 store = vUv;
-
-        vec3 color = vec3(0.0);
-        float d = 0.0;
-
-        float size = float(${arrSize});
-
-        // Remap the space to -1. to 1.
         st = st * 2. - 1.;
 
-        d = length( abs(st) );
-        // vec3 col = vec3(fract(d*size));
         vec3 col = vec3(1.);
-        vec3 col2 = vec3(1.);
-        vec3 col3 = vec3(1.);
+    
+        float t = 0.007;
+        float smoothFactor = 0.003;
 
-        // float val = fArray[ int(floor(store.y * size)) ];
+        float r = 0.75 * 0.5;
 
-        float val = fArray[ 0 ];
-        float val2 = fArray[ 1 ];
-        float val3 = fArray[ 2 ];
+        vec2 p = st;
+        vec2 m = st;
+          
+        float f = 0.04 * 0.5;
+
+        float border = 0.009 * 0.5;
+
+        float d = sdCircle(p, 0.75*0.5);
+
+        float dd = sdCircle(
+          // m + vec2(sin(u_time * 30. * f + 1.)*0.5, sin(u_time * 30. * f + noise(st*2.) * 1.) * 0.5),
+          m + vec2(noise(st * 0.1 + u_time + rms * 1.) * 0.5) + vec2( sin(u_time * 20. * f + zcr * 2.) * 0.3, cos(u_time * 20. * f + zcr * 2.) * 0.3),
+          0.3*0.5 + energy * 0.75 * 0.5
+        );
+
+        col = mix(col, vec3(0.), smoothstep(-0.001,0., smin(d,dd,0.1) - border ));
+        col = mix(col, vec3(0.), smoothstep(0.,-0.001, smin(d,dd,0.1) - border/8. ));
 
 
-        // remap fArray from 0 to 22050 to 0 to 1 in glsl
-        val = val / 22050.0;
-        val2 = val2 / 22050.0;
-        val3 = val3 / 22050.0;
+        // col = mix(vec3(0.), vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st - vec2(0.2) ) )));
+        // col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st - vec2(0.2) ) )));
 
-        // val = min(val, 0.7); // normalize
-        // abs(noise(st + u_time * val * 0.1))
+        // col = mix(col, vec3(1.), 1. - smoothstep(zcr, zcr + smoothFactor, length( abs(st - vec2(0.1) ) )));
+        // col = mix(col, vec3(0.), 1. - smoothstep(zcr - t, zcr - t + smoothFactor, length( abs(st - vec2(0.1) ) )));
 
-        // val = 0.4;
-
-        val = 0.8;
-        // val += atan(val * 0.01);
-
-        float t = 0.01; // thickness
-
-        float factor = noise(st * sin(u_time + st.x * 0.1) + u_time * 0.5) * 0.1;
-        val2 = val + factor;
-
-        col = mix(vec3(0.), vec3(1.), 1. - step(val, length( abs(st ) )));
-        col = mix(col, vec3(0.), 1. - step(val - t, length( abs(st ) )));
-
-        vec2 center = vec2(0., 0.);
-
-        float angle = atan(gl_FragCoord.y - center.y, gl_FragCoord.x - center.x) ;
-        float wave = sin(angle * 5.0 + u_time * 1.0) * 0.1;
-        float wave2 = sin(angle * 5.0 + u_time * 1.0 + 2.) * 0.1;
-        //float newDist = distance(center, gl_FragCoord.xy + vec2(cos(angle) * wave * 0.1, sin(angle) * wave * 0.1));
-
-        col2 = mix(vec3(0.), vec3(1.), 1. - step(val - 1. * sin(wave * st.y), length( abs(st ) )));
-        col2 = mix(col2, vec3(0.), 1. - step(val - 1. * sin(wave * st.y) - t, length( abs(st ) )));
-
-        col3 = mix(vec3(0.), vec3(1.), 1. - step(val - 1. * sin(wave2 * st.y), length( abs(st ) )));
-        col3 = mix(col3, vec3(0.), 1. - step(val - 1. * sin(wave2 * st.y) - t, length( abs(st ) )));
-
+        // col = mix(col, vec3(1.), 1. - smoothstep(energy, energy + smoothFactor, length( abs(st) )));
+        // col = mix(col, vec3(0.), 1. - smoothstep(energy - t, energy - t + smoothFactor,length( abs(st) )));
         
-        //col2 = mix(vec3(0.), vec3(1.), 1. - step(val2, length( abs(st ) )));
-        //col2 = mix(col2, vec3(0.), 1. - step(val2 - t, length( abs(st ) )));
-      
 
-        col = col + col2 + col3;
-
-
+        rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
+        rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t*0.5, r - t*0.5 + smoothFactor, length( abs(st) ))) : col = col;
+        
         gl_FragColor = vec4(col, 1.);
       }
     `,
   });
 
-  // plane geometry with threejs
-  const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
+  const geometry = new THREE.PlaneGeometry(2000, 2000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
   
 }
 
 function animate() {
-  requestAnimationFrame(animate);
+  reqID.value = requestAnimationFrame(animate);
   renderer.render(scene, camera);
   stats.update();
 
-  // add time uniform
-  const time = performance.now() / 1000;
-  mesh.material.uniforms.u_time.value = time;
+  const time = performance.now() * 0.001;
+  
 
-  if (signals.value.powerSpectrum != undefined) {
-
-    const fArray = signals.value.powerSpectrum;
-    minArray = [];
-
-    for (let i = 0; i < fArray.length; i += 1) {
-      minArray.push(fArray[i]);
-    }
-
-    if (minArray[0] > 100) {
-      inc+=2;
-    } else if (minArray[0] > 0.1) {
-      inc+=0.1;
-    }
-
-    if (minArray[1] > 100) {
-      inc2+=2;
-    } else if (minArray[1] > 0.1) {
-      inc2+=0.1;
-    }
-
-    if (minArray[2] > 100) {
-      inc3+=2;
-    } else if (minArray[2] > 0.1) {
-      inc3+=0.1;
-    }
-
-    mesh.material.uniforms.fArray.value = minArray;
-    mesh.material.uniforms.u_inc.value = inc;
-    mesh.material.uniforms.u_inc2.value = inc2;
-    mesh.material.uniforms.u_inc3.value = inc3;
-
-   
+  if (signals.value.rms != undefined && signals.value.rms > 0) {
+    mesh.material.uniforms.u_time.value = time;
+    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
+    mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
+    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+  } else {
+    mesh.material.uniforms.rms.value = 0.0;
+    mesh.material.uniforms.zcr.value = 0.0;
+    mesh.material.uniforms.energy.value = 0.75;
+    mesh.material.uniforms.perceptualSpread.value = 0.0;
+    mesh.material.uniforms.spectralSpread.value = 0.0;
   }
 
 }
@@ -235,9 +196,15 @@ function onWindowResize() {
 }
 
 onMounted(() => {
+
+  if (reqID.value != undefined && reqID.value != 0) {
+    cancelAnimationFrame(reqID.value);
+  }
+  
   window.addEventListener("resize", onWindowResize);
   init();
   animate();
+  
 })
 
 </script>

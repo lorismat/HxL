@@ -20,7 +20,6 @@ let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
 
-
 const signals = useState('signals');
 const debug = false;
 
@@ -48,13 +47,10 @@ function init() {
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
-
       rms: { value: 0.0 },
       energy: { value: 0.0 },
       perceptualSpread: { value: 0.0 },
       clean: { value: 0.0 },
-
-      u_time: { value: 0.0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -73,7 +69,6 @@ function init() {
       uniform float perceptualSpread;
       uniform float spectralSpread;
 
-      uniform float u_time;
       varying vec2 vUv;
 
       float random (vec2 st) {
@@ -104,6 +99,7 @@ function init() {
         st = st * 2. - 1.;
         float t = 0.007; // thickness
         float smoothFactor = 0.003;
+        float r = 0.75;
 
         vec3 col = vec3(1.);
     
@@ -111,13 +107,15 @@ function init() {
         col = mix(vec3(0.), vec3(1.), 1. - smoothstep(perceptualSpread, perceptualSpread + smoothFactor, length( abs(st) )));
         col = mix(col, vec3(0.), 1. - smoothstep(perceptualSpread - t, perceptualSpread - t + smoothFactor, length( abs(st) )));
 
-        col = mix(col, vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st - vec2(0.1) + vec2(noise(st * 10.) * 0.1) ) )));
-        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st - vec2(0.1) + vec2(noise(st * 10.) * 0.1) ) )));
+        col = mix(col, vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st * 0.6 + vec2(noise(st * pow(rms * 4.5,2.)) * 0.1) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st * 0.6 + vec2(noise(st * pow(rms * 4.5,2.)) * 0.1) ) )));
 
-        
-        col = mix(col, vec3(1.), 1. - smoothstep(energy, energy + smoothFactor, length( abs(st + vec2(0.1) + vec2(noise(st * 10.) * 0.01) ) )));
-        col = mix(col, vec3(0.), 1. - smoothstep(energy - t, energy - t + smoothFactor, length( abs(st + vec2(0.1) + vec2(noise(st * 10.) * 0.01) ) )));
+        col = mix(col, vec3(1.), 1. - smoothstep(energy, energy + smoothFactor, length( abs(st * 0.75 + vec2(noise(st * 10.) * 0.01) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(energy - t, energy - t + smoothFactor, length( abs(st * 0.75 + vec2(noise(st * 10.) * 0.01) ) )));
 
+        rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
+        rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) ))) : col = col;
+       
         gl_FragColor = vec4(col, 1.);
       }
     `,
@@ -135,10 +133,6 @@ function animate() {
 
   renderer.render(scene, camera);
   stats.update();
-
-  // add time uniform
-  const time = performance.now() / 1000;
-  mesh.material.uniforms.u_time.value = time;
 
   if (signals.value.rms != undefined && signals.value.rms > 0) {
     mesh.material.uniforms.rms.value = signals.value.rms / 1.;

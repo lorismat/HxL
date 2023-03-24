@@ -37,7 +37,7 @@ function init() {
   );
 
   canvas = document.getElementById(props.id);
-  renderer = new THREE.WebGLRenderer({ antialias : true, canvas, alpha: true });
+  renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -50,8 +50,6 @@ function init() {
   if (debug) document.body.appendChild( stats.dom );
 
   const material = new THREE.ShaderMaterial({
-    transparent:true,
-    side: THREE.DoubleSide,
     uniforms: {
       fArray: { value: new Float32Array(signals.value.arrSize) },
       u_f0: { value: 0.0 },
@@ -105,6 +103,8 @@ function init() {
         float t = 0.007; // thickness
         float smoothFactor = 0.003;
 
+        float r = 0.75;
+
         float val = fArray[0];
         float val2 = fArray[1];
         float val3 = fArray[2];
@@ -114,11 +114,9 @@ function init() {
         val2 = val2 / 22050.0;
         val3 = val3 / 22050.0;
 
-        val = 0.5 + abs(noise(st/4. + u_f0 * 0.02 ) ) * 0.8;
-        val2 = 0.5 + abs(noise(st/4. + u_f1 * 0.02 ) ) * 0.8;
-        val3 = 0.5 + abs(noise(st/4. + u_f2 * 0.02 ) ) * 0.8;
-
-        fArray[0] + fArray[1] + fArray[2] == 0. ? val = val2 = val3 = 0.75 : val = val;
+        val = 0.4 + clamp(0. , 0.39, abs(noise(st/100. + u_f0 * 0.01 ) ));
+        val2 = 0.5 + clamp(0. , 0.49, abs(noise(st/100. + u_f1 * 0.01 ) ));
+        val3 = 0.6 + clamp(0., 0.39, abs(noise(st/100. + u_f2 * 0.01 ) ));
 
         col = mix(col, vec3(0.0), smoothstep(val, val + smoothFactor, length( abs(st) )));
         col = mix(col, vec3(1.0), smoothstep(val + t, val + smoothFactor + t, length( abs(st) )));
@@ -130,6 +128,9 @@ function init() {
         col = mix(col, vec3(1.0), smoothstep(val3 + t, val3 + smoothFactor + t, length( abs(st) )));
 
         col = 1. - col;
+
+      fArray[0] + fArray[1] + fArray[2] == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
+      fArray[0] + fArray[1] + fArray[2] == 0. ? col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) ))) : col = col;
 
         gl_FragColor = vec4(col, 1.);
       }
@@ -170,6 +171,7 @@ function animate() {
     for (let i = 0; i < signals.value.arrSize; i++) {
       fArray.push(0);
     }
+    console.log(fArray);
     mesh.material.uniforms.fArray.value = fArray;
   }
 }

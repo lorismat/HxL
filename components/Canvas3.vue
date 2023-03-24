@@ -1,17 +1,13 @@
 <template>
   <div>
-    <canvas :id="props.id"></canvas>
+    <div>
+      <canvas :id="props.id"></canvas>
+    </div>
   </div>
+  
 </template>
 
 <script setup>
-
-// about render targets
-// https://threejs.org/manual/#en/rendertargets
-// https://threejs.org/docs/#api/en/renderers/WebGLRenderTarget
-// model:
-// https://experiments.p5aholic.me/day/027/
-
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
@@ -22,59 +18,61 @@ const props = defineProps({
   }
 });
 
-let camera, scene, renderer, canvas, stats;
-let mesh, pivot;
+let stats;
+let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
 
-
 const signals = useState('signals');
-
 const debug = false;
-
-const frustumSize = 1000;
-
-let inc = 0;
 
 function init() {
   scene = new THREE.Scene();
-
-  // add orthographic camera
-  const aspect = window.innerWidth / window.innerHeight;
-  camera = new THREE.OrthographicCamera( frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 1, 1000 );
+  camera = new THREE.PerspectiveCamera(
+    70,
+    window.innerWidth / window.innerHeight,
+    1,
+    3000
+  );
 
   canvas = document.getElementById(props.id);
-
   renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
+
   renderer.setClearColor(0x000000, 1.);
 
-  const count = 32;
-  const radius = 270;
-  const geometry = new THREE.CircleGeometry( radius, 128 );
+  camera.position.set(0,0,1000);
+  camera.lookAt( scene.position );
 
-  const arrSize = signals.value.arrSize;
-  
-  // add shader material
-  const material = new THREE.ShaderMaterial( {
+  stats = new Stats();
+  if (debug) document.body.appendChild( stats.dom );
+
+  const material = new THREE.ShaderMaterial({
     uniforms: {
-      resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-      fArray: { value: new Float32Array(arrSize) },
+      rms: { value: 0.0 },
+      zcr: { value: 0.0 },
+      energy: { value: 0.0 },
+      perceptualSpread: { value: 0.0 },
+      spectralSpread: { value: 0.0 },
       u_time: { value: 0.0 },
-
     },
     vertexShader: `
       varying vec2 vUv;
       void main() {
+        vec3 pos = position;
         vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4( position, 1.0 );
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
       }
     `,
     fragmentShader: `
-      uniform vec2 resolution;
-      uniform float fArray[${arrSize}];
+    
       uniform float u_time;
+      uniform float rms;
+      uniform float zcr;
+      uniform float energy;
+      uniform float perceptualSpread;
+      uniform float spectralSpread;
       varying vec2 vUv;
 
       float random (vec2 st) {
@@ -82,12 +80,13 @@ function init() {
                             vec2(12.9808,78.233)))*
             43758.5453123);
       }
+
       vec2 random2(vec2 st){
         st = vec2( dot(st,vec2(127.1,311.7)),
                   dot(st,vec2(269.5,183.3)) );
         return -1.0 + 2.0*fract(sin(st)*43758.5453123);
       }
-      
+
       float noise(vec2 st) {
         vec2 i = floor(st);
         vec2 f = fract(st);
@@ -99,84 +98,78 @@ function init() {
       }
 
       void main() {
+
         vec2 st = vUv;
+
         st = st * 2. - 1.;
+        vec3 col = vec3(1.);
+    
+        float t = 0.007; // thickness
+        float smoothFactor = 0.003;
+        float r = 0.75;
 
-        float val = fArray[ 0 ];
-        float radius = 0.99;
+        col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st ) )));
 
-        vec3 color = vec3(1.0);
-        vec2 center = vec2(0.5, 0.5);
-        float thickness = 0.01 * sin(val * 0.02 * st.x + u_time ) * noise(st) * 2.;
-        float smoothing = 0.01;
-        color *= smoothstep(radius - thickness - smoothing, radius - thickness, length( abs(st)));
-        gl_FragColor = vec4(color,1.0);
+        col = mix(col, vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st - sin(u_time + rms * 10.) * vec2(0.2) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st - sin(u_time + rms * 10.) * vec2(0.2) ) )));
+
+        col = mix(col, vec3(1.), 1. - smoothstep(zcr, zcr + smoothFactor, length( abs(st - cos(u_time) * vec2(0.1) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(zcr - t, zcr - t + smoothFactor, length( abs(st - cos(u_time) * vec2(0.1) ) )));
+
+        col = mix(col, vec3(1.), 1. - smoothstep(energy, energy + smoothFactor, length( abs(st) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(energy - t, energy - t + smoothFactor,length( abs(st) )));
+
+        col = mix(col, vec3(1.), 1. - smoothstep(perceptualSpread, perceptualSpread + smoothFactor, length( st + 0.5 * vec2(sin(u_time * 0.2 + perceptualSpread), cos(u_time * 0.2 + perceptualSpread )) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(perceptualSpread - t, perceptualSpread - t + smoothFactor, length( st + 0.5 * vec2(sin(u_time * 0.2 + perceptualSpread), cos(u_time * 0.2 + perceptualSpread )) )));
+
+        col = mix(col, vec3(1.), 1. - smoothstep(spectralSpread, spectralSpread + smoothFactor, length( abs(st + 0.4 * vec2(cos(u_time * 0.3), sin(u_time * 0.3)) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(spectralSpread - t, spectralSpread - t + smoothFactor, length( abs(st + 0.4 * vec2(cos(u_time * 0.3), sin(u_time * 0.3)) ) )));
+
+        rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
+        rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) ))) : col = col;
+        
+        gl_FragColor = vec4(col, 1.);
       }
     `,
-    side: THREE.DoubleSide,
-  } );
+  });
 
-  const matrix = new THREE.Matrix4();
-  mesh = new THREE.InstancedMesh( geometry, material, count );
-
-  for ( let i = 0; i < count; i ++ ) {
-    //matrix.makeRotationX( i * 0.04 );
-    mesh.setMatrixAt( i, matrix );
-  }
-  
-  scene.add( mesh );
-
-  camera.position.set(0,0,1000);
-  camera.lookAt( scene.position );
-
-  stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
+  mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
   
 }
 
 function animate() {
   reqID.value = requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+  stats.update();
 
   const time = performance.now() * 0.001;
-  inc += 0.001;
   
-  if (signals.value.rms != undefined && signals.value.powerSpectrum[0] > 0) {  
-    
-    // update instance matrix
-    const matrix = new THREE.Matrix4();
-    for ( let i = 0; i < 32; i ++ ) {
 
-      if (i == 0 && signals.value.powerSpectrum[0] > 500) {
-        mesh.material.uniforms.fArray.value = signals.value.powerSpectrum;
-        mesh.material.uniforms.u_time.value = time;
-      } 
-      if (i != 0) {
-        matrix.makeRotationX( i * 0.04 + inc );
-      }
-      
-      mesh.setMatrixAt( i, matrix );
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-
+  if (signals.value.rms != undefined && signals.value.rms > 0) {
+    mesh.material.uniforms.u_time.value = time;
+    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
+    mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
+    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+  } else {
+    mesh.material.uniforms.u_time.value = 0;
+    mesh.material.uniforms.rms.value = 0.0;
+    mesh.material.uniforms.zcr.value = 0.0;
+    mesh.material.uniforms.energy.value = 0.75;
+    mesh.material.uniforms.perceptualSpread.value = 0.0;
+    mesh.material.uniforms.spectralSpread.value = 0.0;
   }
-  
-  renderer.render(scene, camera);
-
-  // update frame stats
-  stats.update();
 
 }
 
 function onWindowResize() {
-
-  const aspect = window.innerWidth / window.innerHeight;
-  camera.left = - frustumSize * aspect / 2;
-  camera.right = frustumSize * aspect / 2;
-  camera.top = frustumSize / 2;
-  camera.bottom = - frustumSize / 2;
+  camera.aspect = window.innerWidth / window.innerHeight ;
   camera.updateProjectionMatrix();
-  renderer.setSize( window.innerWidth, window.innerHeight );
-
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 onMounted(() => {
@@ -184,10 +177,11 @@ onMounted(() => {
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
   }
-
+  
   window.addEventListener("resize", onWindowResize);
   init();
   animate();
+  
 })
 
 </script>

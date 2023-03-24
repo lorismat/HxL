@@ -20,9 +20,6 @@ let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
 
-
-let inc = 0;
-
 const signals = useState('signals');
 const debug = false;
 

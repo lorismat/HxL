@@ -1,7 +1,10 @@
 <template>
   <div>
-    <canvas :id="props.id"></canvas>
+    <div>
+      <canvas :id="props.id"></canvas>
+    </div>
   </div>
+  
 </template>
 
 <script setup>
@@ -17,15 +20,11 @@ const props = defineProps({
 
 let stats;
 let scene, renderer, camera, canvas, mesh;
-let inc= 0;
-let inc2 = 0;
-let inc3 = 0;
+
+const reqID = useState('reqID');
 
 const signals = useState('signals');
-
 const debug = false;
-
-let minArray = [0];
 
 function init() {
   scene = new THREE.Scene();
@@ -37,7 +36,7 @@ function init() {
   );
 
   canvas = document.getElementById(props.id);
-  renderer = new THREE.WebGLRenderer({ antialias : true, canvas, alpha: true });
+  renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -49,20 +48,14 @@ function init() {
   stats = new Stats();
   if (debug) document.body.appendChild( stats.dom );
 
-  // to improve
-  const arrSize = signals.value.arrSize;
-
-  // create shader material
   const material = new THREE.ShaderMaterial({
-    transparent:true,
-    side: THREE.DoubleSide,
     uniforms: {
-      fArray: { value: new Float32Array(arrSize) },
-      u_resolution: { value: 0.0},
+      rms: { value: 0.0 },
+      zcr: { value: 0.0 },
+      energy: { value: 0.0 },
+      perceptualSpread: { value: 0.0 },
+      spectralSpread: { value: 0.0 },
       u_time: { value: 0.0 },
-      u_inc: { value: 0.0 },
-      u_inc2: { value: 0.0 },
-      u_inc3: { value: 0.0 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -73,134 +66,113 @@ function init() {
       }
     `,
     fragmentShader: `
-      uniform float fArray[${arrSize}];
+    
       uniform float u_time;
-      uniform vec2 u_resolution;
+      uniform float rms;
+      uniform float zcr;
+      uniform float energy;
+      uniform float perceptualSpread;
+      uniform float spectralSpread;
       varying vec2 vUv;
-      uniform float u_inc;
-      uniform float u_inc2;
-      uniform float u_inc3;
 
-      float sdCircle( in vec2 p, in float r ) {
-        return length(p) - r;
-      }
-
-      float smin(float a, float b, float k) {
-        float h = max(k - abs(a-b), 0.) / k;
-        return min(a, b) - h*h*h*k*1./6.;
-      }
-
-      // add noise 
       float random (vec2 st) {
-          return fract(sin(dot(st.xy,
-                              vec2(12.9808,78.233)))*
-              43758.5453123);
+        return fract(sin(dot(st.xy,
+                            vec2(12.9808,78.233)))*
+            43758.5453123);
       }
+
       vec2 random2(vec2 st){
-          st = vec2( dot(st,vec2(127.1,311.7)),
-                    dot(st,vec2(269.5,183.3)) );
-          return -1.0 + 2.0*fract(sin(st)*43758.5453123);
+        st = vec2( dot(st,vec2(127.1,311.7)),
+                  dot(st,vec2(269.5,183.3)) );
+        return -1.0 + 2.0*fract(sin(st)*43758.5453123);
       }
-      // Gradient Noise by Inigo Quilez - iq/2013
-      // https://www.shadertoy.com/view/XdXGW8
+
       float noise(vec2 st) {
-          vec2 i = floor(st);
-          vec2 f = fract(st);
-          vec2 u = f*f*(3.0-2.0*f);
-          return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
-                          dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-                      mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
-                          dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+        vec2 i = floor(st);
+        vec2 f = fract(st);
+        vec2 u = f*f*(3.0-2.0*f);
+        return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+                        dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                    mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+                        dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
       }
 
       void main() {
 
-        float pix = 0.001;  
-        vec2 st = vec2(0.5) - vUv;
+        vec2 st = vUv;
+        vec2 store = vUv;
 
-        vec2 p = st * 2.0;
-        vec2 m = st * 2.0;
-          
-        float f = 0.05;
-
-
-        float border = 0.02;
-        float d = sdCircle(p,0.4);
-
-        float dd = sdCircle(
-          m + vec2(sin(u_time*30.*f + 1.)*0.5,sin(u_time*30.*f + noise(st*2.) * 1.)*0.5),
-          0.1
-        );
-
-        float ddd = sdCircle(
-          m + vec2(cos(u_time*30.*f + 20.)*0.5,cos(u_time*30.*f + noise(st*2. + 10.) * 1.)*0.5),
-          0.1
-        );
-
+        st = st * 2. - 1.;
         vec3 col = vec3(1.);
+    
+        float t = 0.007; // thickness
+        float smoothFactor = 0.003;
+        float r = 0.75;
 
-        col = mix(col, vec3(0.), smoothstep(-pix,pix, smin(d,dd,0.1) - border ));
-        col = mix(col, vec3(0.), smoothstep(pix,-pix, smin(d,dd,0.1) - border/4. ));
+        col = mix(vec3(0.), vec3(1.), 1. - smoothstep(0.2, 0.2 + smoothFactor, length( abs(st - vec2(0.2)) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(0.2 - t, 0.2 - t + smoothFactor, length( abs(st - vec2(0.2)) )));
+        
+        vec3 col2 = mix(col, vec3(1.), 1. - smoothstep( 
+          0.58 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01, 
+          0.58 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01 + smoothFactor,
+          store.y) 
+        );
+        
+        col2 = mix(col2, vec3(0.), 1. - smoothstep( 
+          0.576 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01, 
+          0.576 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01 + smoothFactor,
+          store.y) 
+        );
+        col2 = mix(col2, vec3(0.99), 1. - smoothstep( 
+          0.5 + sin(st.x * 5. + perceptualSpread * noise(st + u_time * 2.) * 40.) * 0.01, 
+          0.5 + sin(st.x * 5. + perceptualSpread * noise(st + u_time * 2.) * 40.) * 0.01 + smoothFactor,
+          store.y) 
+        );
+        col2 = mix(col2, vec3(0.), 1. - smoothstep( 
+          0.425 + sin(st.x * 10. + spectralSpread * noise(st + u_time) * 40.) * 0.01, 
+          0.425 + sin(st.x * 10. + spectralSpread * noise(st + u_time) * 40.) * 0.01 + smoothFactor, 
+          store.y) 
+        );
 
-        //col = mix(col, vec3(0.), smoothstep(-pix,pix, smin(d,ddd,0.3) - border ));
-        //col = mix(col, vec3(0.), smoothstep(pix,-pix, smin(d,ddd,0.3) - border/2. ));
-      
-        // FragCoord
+        col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) )));
+        col = mix(col, col2, 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) )));
+
+        // tap
+        rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
+        rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) ))) : col = col;
+
         gl_FragColor = vec4(col, 1.);
       }
     `,
   });
 
-  // plane geometry with threejs
-  const geometry = new THREE.PlaneGeometry(1500, 1500, 32, 32);
+  const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
   
 }
 
 function animate() {
-  requestAnimationFrame(animate);
+  reqID.value = requestAnimationFrame(animate);
   renderer.render(scene, camera);
   stats.update();
 
-  // add time uniform
-  const time = performance.now() / 1000;
+  const time = performance.now() * 0.001;
+  // update uniform time
   mesh.material.uniforms.u_time.value = time;
-  mesh.material.uniforms.u_resolution.value = [window.innerWidth, window.innerHeight];
 
-  if (signals.value.powerSpectrum != undefined) {
-
-    const fArray = signals.value.powerSpectrum;
-    minArray = [];
-
-    for (let i = 0; i < fArray.length; i += 1) {
-      minArray.push(fArray[i]);
-    }
-
-    if (minArray[0] > 100) {
-      inc+=2;
-    } else if (minArray[0] > 0.1) {
-      inc+=0.1;
-    }
-
-    if (minArray[1] > 100) {
-      inc2+=2;
-    } else if (minArray[1] > 0.1) {
-      inc2+=0.1;
-    }
-
-    if (minArray[2] > 100) {
-      inc3+=2;
-    } else if (minArray[2] > 0.1) {
-      inc3+=0.1;
-    }
-
-    mesh.material.uniforms.fArray.value = minArray;
-    mesh.material.uniforms.u_inc.value = inc;
-    mesh.material.uniforms.u_inc2.value = inc2;
-    mesh.material.uniforms.u_inc3.value = inc3;
-
-   
+  if (signals.value.rms != undefined && signals.value.rms > 0) {
+    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
+    mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
+    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+  } else {
+    mesh.material.uniforms.rms.value = 0.0;
+    mesh.material.uniforms.zcr.value = 0.0;
+    mesh.material.uniforms.energy.value = 0.75;
+    mesh.material.uniforms.perceptualSpread.value = 0.0;
+    mesh.material.uniforms.spectralSpread.value = 0.0;
   }
 
 }
@@ -212,9 +184,15 @@ function onWindowResize() {
 }
 
 onMounted(() => {
+
+  if (reqID.value != undefined && reqID.value != 0) {
+    cancelAnimationFrame(reqID.value);
+  }
+  
   window.addEventListener("resize", onWindowResize);
   init();
   animate();
+  
 })
 
 </script>

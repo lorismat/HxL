@@ -7,7 +7,10 @@
       :data-name="song.name" 
       class="el" v-for="song in songs"
       @click="playElement($event)" >
+
+
       {{ song.name }}
+
     </div>
 
     <NowPlaying :song="nowPlaying" class="now"/>
@@ -42,9 +45,25 @@ const songs = [
     "name": "Leaves"
   },
   {
-    "file": "template",
-    "name": "Template File"
-  }
+    "file": "Fight",
+    "name": "Fight"
+  },
+  {
+    "file": "Pass-the-Time",
+    "name": "Pass The Time"
+  },
+  {
+    "file": "Problem-with-the-sun",
+    "name": "Problem With The Sun"
+  },
+  {
+    "file": "Mi-Mujer",
+    "name": "Mi Mujer"
+  },
+  {
+    "file": "No-one-is-looking-at-U",
+    "name": "No One is Looking at U"
+  },
 ];
 
 songs.forEach((song, i) => {
