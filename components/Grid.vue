@@ -9,7 +9,7 @@
                 :data-column="columnIndex"
                 :data-index="counter">
 
-                <span>{{ pad(counter++, 2) }}</span>
+                <span class="hl-grid__cell__index">{{ pad(counter++, 2) }}</span>
                 <button class="hl-close-btn">Close</button>
             </div>
         </div>

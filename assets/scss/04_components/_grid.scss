@@ -51,7 +51,23 @@
             cursor: pointer;
         }
 
+        // @media (hover: hover) {
+        //     &:not(:hover) {
+        //         .hl-grid__cell__index {
+        //             color: var(--color-font-muted);
+        //         }
+        //     }
+        // }
+
+        // &.is-fullscreen {
+        //     .hl-grid__cell__index {
+        //         color: var(--color-font);
+        //     }
+        // }
+
         &:not(.is-fullscreen) {
+            cursor: pointer;
+
             .hl-close-btn {
                 display: none;
             }
