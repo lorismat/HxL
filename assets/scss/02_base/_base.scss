@@ -9,6 +9,8 @@ html, body {
     font-size: var(--font-size);
     line-height: var(--line-height);
     font-weight: var(--font-weight);
+    letter-spacing: var(--letter-spacing);
+    text-transform: uppercase;
 
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -39,4 +41,13 @@ html {
 }
 html::-webkit-scrollbar { 
     display: none;  /* Safari and Chrome */
+}
+
+button {
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+    line-height: var(--line-height);
+    font-weight: var(--font-weight);
+    letter-spacing: var(--letter-spacing);
+    text-transform: uppercase;
 }

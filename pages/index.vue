@@ -2,7 +2,7 @@
   <Pointer :text="playerText" />
   <IndexTable />
   
-  <main>
+  <main>    
     <Canvas1 v-if="cv == 1" @click="triggerSound" id="c-3843920043893" />
     <Canvas2 v-if="cv == 2" @click="triggerSound" id="c-4754729020181" />
     <Canvas3 v-if="cv == 3" @click="triggerSound" id="c-4858930288500" />

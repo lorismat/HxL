@@ -1,14 +1,20 @@
 :root {
     // Colors
-    --color-font: #fff;
-    --color-bg: #000;
+    --color-light: #f7f7f7;
+    --color-dark: #000;
+    --color-muted-dark: #484848;
+    --color-muted-light: #D3D3D3;
+
+    --color-font: var(--color-light);
+    --color-bg: var(--color-dark);
+    --color-borders: var(--color-muted-dark);
 
     // Typography
     --font-family: Helvetica, Arial, sans-serif;
-    --font-size: 12px;
+    --font-size: 11px;
     --line-height: 1.2;
     --font-weight: 400;
-    --letter-spacing: 0;
+    --letter-spacing: -.02em;
 
     // Spacing
     --spacer: calc(1rem * var(--line-height));
@@ -20,5 +26,14 @@
     --spacer-025:  calc(var(--spacer)*.25);
     --spacer-05:  calc(var(--spacer)*.5);
     --spacer-075:  calc(var(--spacer)*.75);
-    --spacer-1-05:  calc(var(--spacer)*1.5);    
+    --spacer-1-05:  calc(var(--spacer)*1.5);
+
+    // Layout
+    --vh: 1vh;
+    --vw: 1vw;
+    --viewport-height: calc(100* var(--vh));
+    --viewport-width: calc(100* var(--vw));
+
+    --main-padding-x: var(--spacer-2);
+    --main-padding-y: var(--spacer-2);
 }

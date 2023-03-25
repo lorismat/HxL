@@ -1,0 +1,11 @@
+.theme-dark {
+    --color-font: var(--color-light);
+    --color-bg: var(--color-dark);
+    --color-borders: var(--color-muted-dark);
+}
+
+.theme-light {
+    --color-font: var(--color-dark);
+    --color-bg: var(--color-light);
+    --color-borders: var(--color-muted-light);
+}

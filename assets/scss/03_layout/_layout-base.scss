@@ -1,9 +1,49 @@
 body > div {
-    height: 100%;
+    height: var(--viewport-height);
+    overflow: hidden;
+    padding: var(--main-padding-y) var(--main-padding-x);
 }
 
-main {
-    height: 100%;
+.hl-main {
+    position: fixed;
+    width: calc(var(--viewport-width) - var(--main-padding-x)*2);
+    height: calc(var(--viewport-height) - var(--main-padding-y)*2);
+    top: var(--main-padding-y); 
+    right: var(--main-padding-x);
+    bottom: var(--main-padding-y); 
+    left: var(--main-padding-x);
+    overflow-y: auto;
+    box-shadow: 0 0 0 1px var(--color-borders);
+    
+    &__corner {
+        position: fixed;
+        width: calc(var(--main-padding-x) - 1px);
+        height: calc(var(--main-padding-y) - 1px);
+        
+        &.is-top-left {
+            top: 0;
+            left: 0;
+            box-shadow: 1px 1px 0 0 var(--color-borders);
+        }
+        
+        &.is-top-right {
+            top: 0;
+            right: 0;
+            box-shadow: -1px 1px 0 0 var(--color-borders);
+        }
+        
+        &.is-bottom-left {
+            bottom: 0;
+            left: 0;
+            box-shadow: 1px -1px 0 0 var(--color-borders);
+        }
+        
+        &.is-bottom-right {
+            bottom: 0;
+            right: 0;
+            box-shadow: -1px -1px 0 0 var(--color-borders);
+        }
+    }
 }
 
 
