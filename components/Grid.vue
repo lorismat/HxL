@@ -29,11 +29,32 @@ const cells = ref([])
 
 onMounted(() => {
     wrapper = document.querySelector('main')
-
-    cells.value.forEach(element => element.addEventListener('click', onCellClick))
+    setupCells()
+    window.addEventListener('resize', onResize)
 })
 
+onUnmounted(() => {
+    setupCells()
+    window.removeEventListener('resize', onResize)
+})
+
+function setupCells() {
+    if (window.innerWidth < 600) {
+        numColumns.value = 2
+        numRows.value = 8
+    } else if (window.innerWidth < 1200) {
+        numColumns.value = 3
+        numRows.value = 6
+    } else {
+        numColumns.value = 4
+        numRows.value = 4
+    }
+    cells.value.forEach(element => element.removeEventListener('click', onCellClick))
+    cells.value.forEach(element => element.addEventListener('click', onCellClick))
+}
+
 function onCellClick(e) {
+    cells.value.forEach(element => element.removeEventListener('click', onCellClick))
     const cellElement = e.target.closest('.hl-grid__cell')
     const cell = {
         el: cellElement,
@@ -41,12 +62,10 @@ function onCellClick(e) {
         column: parseInt(cellElement.dataset.column),
         index: parseInt(cellElement.dataset.index),
     }
-
     goFullscreen(cell)
 }
 
 function goFullscreen(cell) {
-    cell.el.removeEventListener('click', onCellClick)
     cell.el.classList.add('is-fullscreen')
 
     const cellWidth = wrapper.offsetWidth / numColumns.value
@@ -58,6 +77,7 @@ function goFullscreen(cell) {
     
     gsap.set(wrapper, { overflow: 'hidden' })
     storedScroll = wrapper.scrollTop
+    
     const closeBtn = cell.el.querySelector('.hl-close-btn')
     gsap.set(closeBtn, { autoAlpha: 0 })
     
@@ -107,9 +127,7 @@ function onCloseClick(e) {
     exitFullscreen(cell)
 }
 
-function exitFullscreen(cell) {
-    cell.el.classList.remove('is-fullscreen')
-    
+function exitFullscreen(cell) {    
     const cellWidth = wrapper.offsetWidth / numColumns.value
     const row = rows.value[cell.row]
     const column = cell.column
@@ -117,12 +135,15 @@ function exitFullscreen(cell) {
     const duration = .6
     const ease = 'expo.out'
 
+    gsap.to(cell.el.querySelector('.hl-close-btn'), {
+        autoAlpha: 0,
+        duration: .2,
+    })
+
     const tl = gsap.timeline({
         onComplete: () => {
-            cells.value.forEach(element => {
-                element.addEventListener('click', onCellClick)
-                gsap.set(wrapper, { overflow: '', overflowY: 'auto' })
-            })
+            gsap.set(wrapper, { overflow: '', overflowY: 'auto' })
+            cells.value.forEach(element => element.addEventListener('click', onCellClick))
 
             gsap.set(cell.el, {
                 width: '',
@@ -131,6 +152,8 @@ function exitFullscreen(cell) {
                 flexBasis: '',
                 height: '',
             })
+
+            cell.el.classList.remove('is-fullscreen')
         }
     })
 
@@ -155,6 +178,10 @@ function exitFullscreen(cell) {
         duration: duration,
         ease: ease,
     }, 0)
+}
+
+function onResize() {
+    setupCells()
 }
 
 // TODO: To global utils
