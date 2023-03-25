@@ -21,6 +21,7 @@ import gsap from 'gsap'
 
 let wrapper = null
 let storedScroll = 0
+let cellWidth = 0
 
 const numColumns = ref(4)
 const numRows = ref(4)
@@ -34,7 +35,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    setupCells()
     window.removeEventListener('resize', onResize)
 })
 
@@ -49,6 +49,7 @@ function setupCells() {
         numColumns.value = 4
         numRows.value = 4
     }
+    cellWidth = wrapper.offsetWidth / numColumns.value
     cells.value.forEach(element => element.removeEventListener('click', onCellClick))
     cells.value.forEach(element => element.addEventListener('click', onCellClick))
 }
@@ -68,7 +69,6 @@ function onCellClick(e) {
 function goFullscreen(cell) {
     cell.el.classList.add('is-fullscreen')
 
-    const cellWidth = wrapper.offsetWidth / numColumns.value
     const row = rows.value[cell.row]
     const column = cell.column
 
