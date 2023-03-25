@@ -52,4 +52,10 @@ button {
     font-weight: var(--font-weight);
     letter-spacing: var(--letter-spacing);
     text-transform: uppercase;
+    
+    @media (hover: hover) {
+        &:hover {
+            text-decoration: underline;
+        }
+    }
 }

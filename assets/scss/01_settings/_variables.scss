@@ -35,6 +35,12 @@
     --viewport-height: calc(100* var(--vh));
     --viewport-width: calc(100* var(--vw));
 
-    --main-padding-x: var(--spacer-2);
-    --main-padding-y: var(--spacer-2);
+    @include media (mobile) {
+        --main-padding-x: var(--spacer-2);
+        --main-padding-y: var(--spacer-2);
+    }
+    @include media (tablet, desktop) {
+        --main-padding-x: var(--spacer-3);
+        --main-padding-y: var(--spacer-3);
+    }
 }

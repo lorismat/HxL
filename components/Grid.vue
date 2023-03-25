@@ -21,10 +21,10 @@ import gsap from 'gsap'
 
 let wrapper = null
 let storedScroll = 0
-let cellWidth = 0
+let cellSize = 0
 
-const numColumns = ref(4)
-const numRows = ref(4)
+const numColumns = ref(0)
+const numRows = ref(0)
 const rows = ref([])
 const cells = ref([])
 
@@ -35,6 +35,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    cells.value.forEach(element => element.removeEventListener('click', onCellClick))
     window.removeEventListener('resize', onResize)
 })
 
@@ -49,9 +50,11 @@ function setupCells() {
         numColumns.value = 4
         numRows.value = 4
     }
-    cellWidth = wrapper.offsetWidth / numColumns.value
-    cells.value.forEach(element => element.removeEventListener('click', onCellClick))
-    cells.value.forEach(element => element.addEventListener('click', onCellClick))
+    
+    nextTick(() => {
+        cellSize = (wrapper.getBoundingClientRect().width - numColumns.value) / numColumns.value
+        cells.value.forEach(element => element.addEventListener('click', onCellClick))
+    })
 }
 
 function onCellClick(e) {
@@ -68,6 +71,7 @@ function onCellClick(e) {
 
 function goFullscreen(cell) {
     cell.el.classList.add('is-fullscreen')
+    wrapper.classList.add('is-fullscreen')
 
     const row = rows.value[cell.row]
     const column = cell.column
@@ -91,23 +95,23 @@ function goFullscreen(cell) {
     })
 
     tl.to(row, {
-        x: -1* (cellWidth * column) - 1,
+        x: -1* (wrapper.getBoundingClientRect().width/numColumns.value * column) - 1,
         duration: duration,
         ease: ease,
     }, 0)
     
     tl.to(cell.el, {
-        width: (cellWidth * numColumns.value) + 2,
-        minWidth: (cellWidth * numColumns.value) + 2,
-        maxWidth: (cellWidth * numColumns.value) + 2,
-        flexBasis: (cellWidth * numColumns.value) + 2,
-        height: wrapper.offsetHeight + 2,
+        width: wrapper.getBoundingClientRect().width + 2,
+        minWidth: wrapper.getBoundingClientRect().width + 2,
+        maxWidth: wrapper.getBoundingClientRect().width + 2,
+        flexBasis: wrapper.getBoundingClientRect().width + 2,
+        height: wrapper.getBoundingClientRect().height + 2,
         duration: duration,
         ease: ease,
     }, 0)
 
     tl.to(wrapper, {
-        scrollTop: cellWidth * cell.row + 1,
+        scrollTop: cellSize * cell.row + cell.row,
         duration: duration,
         ease: ease,
     }, 0)
@@ -128,12 +132,12 @@ function onCloseClick(e) {
 }
 
 function exitFullscreen(cell) {    
-    const cellWidth = wrapper.offsetWidth / numColumns.value
+    const cellSize = wrapper.offsetWidth / numColumns.value
     const row = rows.value[cell.row]
     const column = cell.column
 
     const duration = .6
-    const ease = 'expo.out'
+    const ease = 'expo.inOut'
 
     gsap.to(cell.el.querySelector('.hl-close-btn'), {
         autoAlpha: 0,
@@ -154,6 +158,7 @@ function exitFullscreen(cell) {
             })
 
             cell.el.classList.remove('is-fullscreen')
+            wrapper.classList.remove('is-fullscreen')
         }
     })
 
@@ -164,11 +169,11 @@ function exitFullscreen(cell) {
     }, 0)
     
     tl.to(cell.el, {
-        width: cellWidth,
-        minWidth: cellWidth,
-        maxWidth: cellWidth,
-        flexBasis: cellWidth,
-        height: cellWidth,
+        width: cellSize,
+        minWidth: cellSize,
+        maxWidth: cellSize,
+        flexBasis: cellSize,
+        height: cellSize,
         duration: duration,
         ease: ease,
     }, 0)
@@ -181,6 +186,7 @@ function exitFullscreen(cell) {
 }
 
 function onResize() {
+    cells.value.forEach(element => element.removeEventListener('click', onCellClick))
     setupCells()
 }
 
