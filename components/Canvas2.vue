@@ -114,9 +114,9 @@ function init() {
         val2 = val2 / 22050.0;
         val3 = val3 / 22050.0;
 
-        val = 0.4 + clamp(0. , 0.39, abs(noise(st/100. + u_f0 * 0.01 ) ));
-        val2 = 0.5 + clamp(0. , 0.49, abs(noise(st/100. + u_f1 * 0.01 ) ));
-        val3 = 0.6 + clamp(0., 0.39, abs(noise(st/100. + u_f2 * 0.01 ) ));
+        val = 0.4 + clamp(0. , 0.39, 2. * abs(noise(st/100. + u_f0 * 0.01 ) ));
+        val2 = 0.5 + clamp(0. , 0.49, 2. * abs(noise(st/100. + u_f1 * 0.01 ) ));
+        val3 = 0.6 + clamp(0., 0.39, 2. * abs(noise(st/100. + u_f2 * 0.01 ) ));
 
         col = mix(col, vec3(0.0), smoothstep(val, val + smoothFactor, length( abs(st) )));
         col = mix(col, vec3(1.0), smoothstep(val + t, val + smoothFactor + t, length( abs(st) )));

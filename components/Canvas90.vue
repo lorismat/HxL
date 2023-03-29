@@ -140,7 +140,7 @@ function init() {
 
         // col = mix(vec3(0.), vec3(1.), circle(st, vec2(random(vec2(arr[int(floor(store.y * 10.)) ] ))), 0.1 ));
 
-        col = mix(vec3(0.), vec3(1.), circle(st, vec2(1.), 0.1 ));
+        col = mix(vec3(0.), vec3(1.), circle(st, vec2(fl), 0.1 ));
 
         gl_FragColor = vec4(col, 1.);
       }
