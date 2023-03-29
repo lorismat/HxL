@@ -19,7 +19,6 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
 const signals = useState('signals');
 const debug = false;
 
@@ -61,13 +60,11 @@ function init() {
       }
     `,
     fragmentShader: `
-    
       uniform float clean;
       uniform float rms;
       uniform float zcr;
       uniform float energy;
       uniform float perceptualSpread;
-      uniform float spectralSpread;
 
       varying vec2 vUv;
 
@@ -97,13 +94,13 @@ function init() {
 
         vec2 st = vUv;
         st = st * 2. - 1.;
-        float t = 0.007; // thickness
+
+        float t = 0.007;
         float smoothFactor = 0.003;
         float r = 0.75;
 
         vec3 col = vec3(1.);
     
-        // middle, background
         col = mix(vec3(0.), vec3(1.), 1. - smoothstep(perceptualSpread, perceptualSpread + smoothFactor, length( abs(st) )));
         col = mix(col, vec3(0.), 1. - smoothstep(perceptualSpread - t, perceptualSpread - t + smoothFactor, length( abs(st) )));
 
@@ -121,7 +118,6 @@ function init() {
     `,
   });
 
-  // plane geometry with threejs
   const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
@@ -147,7 +143,6 @@ function animate() {
 
     mesh.material.uniforms.clean.value = 0.;
   }
-
 }
 
 function onWindowResize() {

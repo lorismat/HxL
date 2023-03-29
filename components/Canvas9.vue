@@ -3,9 +3,7 @@
     <div>
       <canvas :id="props.id"></canvas>
     </div>
-
   </div>
-  
 </template>
 
 <script setup>
@@ -23,7 +21,6 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
 const signals = useState('signals');
 const debug = false;
 
@@ -55,7 +52,6 @@ function init() {
       zcr: { value: 0.0 },
       energy: { value: 0.0 },
       perceptualSpread: { value: 0.0 },
-      spectralSpread: { value: 0.0 },
       u_time: { value: 0.0 },
     },
     vertexShader: `
@@ -67,13 +63,11 @@ function init() {
       }
     `,
     fragmentShader: `
-    
       uniform float u_time;
       uniform float rms;
       uniform float zcr;
       uniform float energy;
       uniform float perceptualSpread;
-      uniform float spectralSpread;
       varying vec2 vUv;
 
       float sdCircle( in vec2 p, in float r ) {
@@ -131,24 +125,12 @@ function init() {
         float d = sdCircle(p, 0.75*0.5);
 
         float dd = sdCircle(
-          // m + vec2(sin(u_time * 30. * f + 1.)*0.5, sin(u_time * 30. * f + noise(st*2.) * 1.) * 0.5),
           m + vec2(noise(st * 0.1 + u_time + rms * 1.) * 0.5) + vec2( sin(u_time * 20. * f + zcr * 2.) * 0.3, cos(u_time * 20. * f + zcr * 2.) * 0.3),
           0.3*0.5 + energy * 0.75 * 0.5
         );
 
         col = mix(col, vec3(0.), smoothstep(-0.001,0., smin(d,dd,0.1) - border ));
         col = mix(col, vec3(0.), smoothstep(0.,-0.001, smin(d,dd,0.1) - border/8. ));
-
-
-        // col = mix(vec3(0.), vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st - vec2(0.2) ) )));
-        // col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st - vec2(0.2) ) )));
-
-        // col = mix(col, vec3(1.), 1. - smoothstep(zcr, zcr + smoothFactor, length( abs(st - vec2(0.1) ) )));
-        // col = mix(col, vec3(0.), 1. - smoothstep(zcr - t, zcr - t + smoothFactor, length( abs(st - vec2(0.1) ) )));
-
-        // col = mix(col, vec3(1.), 1. - smoothstep(energy, energy + smoothFactor, length( abs(st) )));
-        // col = mix(col, vec3(0.), 1. - smoothstep(energy - t, energy - t + smoothFactor,length( abs(st) )));
-        
 
         rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
         rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t*0.5, r - t*0.5 + smoothFactor, length( abs(st) ))) : col = col;
@@ -178,13 +160,11 @@ function animate() {
     mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
     mesh.material.uniforms.energy.value = signals.value.energy / 100.;
     mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
-    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
   } else {
     mesh.material.uniforms.rms.value = 0.0;
     mesh.material.uniforms.zcr.value = 0.0;
     mesh.material.uniforms.energy.value = 0.75;
     mesh.material.uniforms.perceptualSpread.value = 0.0;
-    mesh.material.uniforms.spectralSpread.value = 0.0;
   }
 
 }

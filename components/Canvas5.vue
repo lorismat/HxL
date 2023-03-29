@@ -3,10 +3,7 @@
     <div>
       <canvas :id="props.id"></canvas>
     </div>
-
-    
   </div>
-  
 </template>
 
 <script setup>
@@ -24,7 +21,6 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
 const signals = useState('signals');
 const debug = false;
 
@@ -51,7 +47,6 @@ function init() {
   if (debug) document.body.appendChild( stats.dom );
 
   const chromaArrSize = 24;
-
   const material = new THREE.ShaderMaterial({
     uniforms: {
       rms: { value: 0.0 },
@@ -67,7 +62,6 @@ function init() {
       }
     `,
     fragmentShader: `
-
       uniform float u_time;
       uniform float rms;
       uniform float cArray[${chromaArrSize}];
@@ -111,8 +105,7 @@ function init() {
         float size = float(${chromaArrSize});
         st.y = fract(st.y * size);
       
-        float t = 0.007; // thickness
-        
+        float t = 0.007;
         float c = cArray[int(coord.y * size)];
 
         col = mix(
@@ -147,7 +140,6 @@ function animate() {
   renderer.render(scene, camera);
   stats.update();
 
-  // add time uniform
   const time = performance.now() * 0.001;
   mesh.material.uniforms.u_time.value = time;
 

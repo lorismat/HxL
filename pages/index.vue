@@ -65,23 +65,27 @@ function triggerSound() {
       const audioContext = new AudioContext();
       const htmlAudioElement = document.getElementById("audio");
       const source = audioContext.createMediaElementSource(htmlAudioElement);
+      const bufferSize = 256;
       source.connect(audioContext.destination);
 
       const analyzer = Meyda.createMeydaAnalyzer({
         audioContext: audioContext,
         source: source,
-        bufferSize: Math.pow(2, 8), // 256
+        bufferSize: bufferSize, // 256
         featureExtractors: ["powerSpectrum", "rms", "zcr", "energy", "perceptualSpread", "spectralSpread", "chroma"],
         callback: (features) => {
           signals.value.powerSpectrum = features.powerSpectrum; // size: 128, arrValues between 0 and 44100/2 = 22050
           signals.value.rms = features.rms; // 0 - 1
           signals.value.zcr = features.zcr; // value between (buffer size / 2) - 1, to clamp
-          signals.value.energy = features.energy; // value between 0 and buffer size, to clamp
-          signals.value.perceptualSpread = features.perceptualSpread; // 0 - 1, varies slowly
-          signals.value.spectralSpread = features.spectralSpread; // 
+          signals.value.energy = features.energy / bufferSize; // value between 0 and buffer size, to clamp
+          signals.value.perceptualSpread = features.perceptualSpread; // 0 - 1
+          signals.value.spectralSpread = features.spectralSpread / bufferSize / 2; // 0 - half of the FFT size. In Meyda the FFT size is equal to the buffer size
+          
           // signals.value.chroma = features.chroma; // 12 values, 0 - 1
           // create an array where each value of the chroma array is repeated twice
           signals.value.chroma = features.chroma.flatMap((x) => [x, x]);
+
+          console.log(signals.value.spectralSpread);
         },
       });
       analyzer.start();

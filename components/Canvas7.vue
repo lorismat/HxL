@@ -3,17 +3,12 @@
     <div>
       <canvas :id="props.id"></canvas>
     </div>
-
   </div>
-  
 </template>
 
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-// add orbit controls
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-
 
 const props = defineProps({
   id: {
@@ -56,7 +51,6 @@ function init() {
   const planeMaterial = new THREE.ShaderMaterial({
     transparent: true,
     blending:THREE.AdditiveBlending,
-
     depthWrite: false,
     side: THREE.DoubleSide,
     vertexShader: `
@@ -88,12 +82,6 @@ function init() {
   plane2 = plane.clone();
   plane3 = plane.clone();
   scene.add(plane, plane2, plane3);
-
-  // controls
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  
 }
 
 function animate() {
@@ -114,12 +102,6 @@ function animate() {
     plane.rotation.x = 0.0;
     plane2.rotation.y = 0.0;
   }
-
-  console.log(signals.value.rms);
-
-  // update controls
-  controls.update();
-
 
 }
 

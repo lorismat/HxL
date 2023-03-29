@@ -22,7 +22,6 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
 const signals = useState('signals');
 const debug = false;
 
@@ -66,7 +65,6 @@ function init() {
       }
     `,
     fragmentShader: `
-    
       uniform float u_time;
       uniform float rms;
       uniform float zcr;
@@ -104,7 +102,7 @@ function init() {
         st = st * 2. - 1.;
         vec3 col = vec3(1.);
     
-        float t = 0.007; // thickness
+        float t = 0.007;
         float smoothFactor = 0.003;
         float r = 0.75;
 
@@ -147,14 +145,13 @@ function animate() {
 
   const time = performance.now() * 0.001;
   
-
   if (signals.value.rms != undefined && signals.value.rms > 0) {
     mesh.material.uniforms.u_time.value = time;
     mesh.material.uniforms.rms.value = signals.value.rms / 1.;
     mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
     mesh.material.uniforms.energy.value = signals.value.energy / 100.;
     mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
-    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread * 2;
   } else {
     mesh.material.uniforms.u_time.value = 0;
     mesh.material.uniforms.rms.value = 0.0;

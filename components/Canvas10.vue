@@ -4,7 +4,6 @@
       <canvas :id="props.id"></canvas>
     </div>
   </div>
-  
 </template>
 
 <script setup>
@@ -22,7 +21,6 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
 const signals = useState('signals');
 const debug = false;
 
@@ -66,7 +64,6 @@ function init() {
       }
     `,
     fragmentShader: `
-    
       uniform float u_time;
       uniform float rms;
       uniform float zcr;
@@ -103,14 +100,11 @@ function init() {
         vec2 store = vUv;
 
         st = st * 2. - 1.;
-        vec3 col = vec3(1.);
+        vec3 col = vec3(0.);
     
         float t = 0.007; // thickness
         float smoothFactor = 0.003;
         float r = 0.75;
-
-        col = mix(vec3(0.), vec3(1.), 1. - smoothstep(0.2, 0.2 + smoothFactor, length( abs(st - vec2(0.2)) )));
-        col = mix(col, vec3(0.), 1. - smoothstep(0.2 - t, 0.2 - t + smoothFactor, length( abs(st - vec2(0.2)) )));
         
         vec3 col2 = mix(col, vec3(1.), 1. - smoothstep( 
           0.58 + sin(u_time * 2. + st.x * 10. + pow(rms, 0.8) * noise(st + u_time * 4.) * 10.) * 0.01, 
@@ -137,7 +131,6 @@ function init() {
         col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) )));
         col = mix(col, col2, 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) )));
 
-        // tap
         rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
         rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) ))) : col = col;
 
@@ -158,7 +151,6 @@ function animate() {
   stats.update();
 
   const time = performance.now() * 0.001;
-  // update uniform time
   mesh.material.uniforms.u_time.value = time;
 
   if (signals.value.rms != undefined && signals.value.rms > 0) {
@@ -166,7 +158,7 @@ function animate() {
     mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
     mesh.material.uniforms.energy.value = signals.value.energy / 100.;
     mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
-    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread * 10;
   } else {
     mesh.material.uniforms.rms.value = 0.0;
     mesh.material.uniforms.zcr.value = 0.0;

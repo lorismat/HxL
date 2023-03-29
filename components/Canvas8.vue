@@ -3,9 +3,7 @@
     <div>
       <canvas :id="props.id"></canvas>
     </div>
-
   </div>
-  
 </template>
 
 <script setup>
@@ -67,7 +65,6 @@ function init() {
       }
     `,
     fragmentShader: `
-    
       uniform float u_time;
       uniform float rms;
       uniform float zcr;
@@ -137,7 +134,6 @@ function init() {
           0.15 * 0.5
         );
 
-
         float dddd = sdCircle(
           m + vec2( sin(u_time * 20. * f) * 0.4, cos(u_time * 20. * f) * 0.4),
           0.4 * 0.5
@@ -146,11 +142,8 @@ function init() {
         col = mix(col, vec3(0.), smoothstep(0.,-0.001, smin(-d,dd, 0.05 + abs(sin(energy * 1. + u_time * 10.)) * 0.3) - border/8. ));
         col = mix(col, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dd, 0.05 + abs(sin(energy * 1. + u_time * 10.)) * 0.3) - border ));
 
-        // col2 = mix(col2, vec3(0., 0., 1.), smoothstep(0.,-0.001, smin(-d,ddd,0.1) - border/8. ));
-        // col2 = mix(col2, vec3(1., 0., 0.), smoothstep(-0.001,0., smin(-d,ddd,0.1) - border ));
-
-        col2 = mix(col2, vec3(0.), smoothstep(0.,-0.001, smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 + spectralSpread * 10. ) * 1. )) - border/8. ));
-        col2 = mix(col2, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 + spectralSpread * 10. ) * 1. )) - border ));
+        col2 = mix(col2, vec3(0.), smoothstep(0.,-0.001, smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 + spectralSpread ) * 1. )) - border/8. ));
+        col2 = mix(col2, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 + spectralSpread ) * 1. )) - border ));
 
         col3 = mix(col3, vec3(0.), smoothstep(0.,-0.001, smin(-d,dddd, 0.05 + abs(noise( vec2(1.) * 10. + u_time * 0.1 ) * 1. )) - border/8. ));
         col3 = mix(col3, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(1.) * 10. + u_time * 0.1 ) * 1. )) - border ));
@@ -168,7 +161,6 @@ function init() {
   const geometry = new THREE.PlaneGeometry(2000, 2000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
-  
 }
 
 function animate() {
@@ -178,14 +170,13 @@ function animate() {
 
   const time = performance.now() * 0.001;
   
-
   if (signals.value.rms != undefined && signals.value.rms > 0) {
     mesh.material.uniforms.u_time.value = time;
     mesh.material.uniforms.rms.value = signals.value.rms / 1.;
     mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
     mesh.material.uniforms.energy.value = signals.value.energy / 100.;
     mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
-    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread * 20;
   } else {
     mesh.material.uniforms.rms.value = 0.0;
     mesh.material.uniforms.zcr.value = 0.0;
@@ -193,7 +184,6 @@ function animate() {
     mesh.material.uniforms.perceptualSpread.value = 0.0;
     mesh.material.uniforms.spectralSpread.value = 0.0;
   }
-
 }
 
 function onWindowResize() {

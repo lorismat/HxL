@@ -10,9 +10,6 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-// add orbit controls
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-
 
 const props = defineProps({
   id: {
@@ -22,7 +19,7 @@ const props = defineProps({
 });
 
 let stats;
-let scene, renderer, camera, canvas, mesh, controls;
+let scene, renderer, camera, canvas, mesh, plane;
 
 const reqID = useState('reqID');
 const signals = useState('signals');
@@ -91,9 +88,7 @@ function init() {
         vec3 pos = position;
         v_position = position;
         vUv = uv;
-
         pos.z += noise(pos.xy / 200. + rms * 0.01) * 300.;
-
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
       }
     `,
@@ -117,14 +112,15 @@ function init() {
     `
   });
 
-  // create a sphere and add it to the scene
   const geometry = new THREE.SphereGeometry(500, 128*2, 128*2);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
 
-  // create a plane geometry and add it to the scene
   const planeGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
   const planeMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      rms: { value: 0.0 },
+    },
     vertexShader: `
       varying vec2 vUv;
       void main() {
@@ -134,26 +130,26 @@ function init() {
       }
     `,
     fragmentShader: `
+      uniform float rms;
       varying vec2 vUv;
+
       void main() {
         vec2 st = vUv;
         st = st * 2. - 1.;
         vec3 col = vec3(1.);
-        float t = 0.007; // thickness
+        float t = 0.007;
         float smoothFactor = 0.003;
         col = mix(vec3(0.), vec3(1.), 1. - smoothstep(0.75, 0.75 + smoothFactor, length( abs(st) )));
         col = mix(col, vec3(0.), 1. - smoothstep(0.75 - t, 0.75 - t + smoothFactor,length( abs(st) )));
+
+        rms == 0. ? col = col : col = vec3(0.);
+
         gl_FragColor = vec4(col, 1.);
       }
     `,
   });
-  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  plane = new THREE.Mesh(planeGeometry, planeMaterial);
   scene.add(plane);
-
-  // controls
-  // controls = new OrbitControls(camera, renderer.domElement);
-  // controls.enableDamping = true;
-  // controls.dampingFactor = 0.05;
   
 }
 
@@ -167,13 +163,12 @@ function animate() {
   if (signals.value.rms != undefined && signals.value.rms > 0) {
     mesh.material.uniforms.rms.value += signals.value.rms * 10.;
     mesh.material.uniforms.u_time.value = time;
+
+    plane.material.uniforms.rms.value += signals.value.rms * 10.;
   } else {
     mesh.material.uniforms.rms.value = 0.;
+    plane.material.uniforms.rms.value = 0.;
   }
-
-  // update controls
-  // controls.update();
-
 
 }
 
