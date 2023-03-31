@@ -75,17 +75,16 @@ function triggerSound() {
         featureExtractors: ["powerSpectrum", "rms", "zcr", "energy", "perceptualSpread", "spectralSpread", "chroma"],
         callback: (features) => {
           signals.value.powerSpectrum = features.powerSpectrum; // size: 128, arrValues between 0 and 44100/2 = 22050
-          signals.value.rms = features.rms; // 0 - 1
-          signals.value.zcr = features.zcr; // value between (buffer size / 2) - 1, to clamp
+          signals.value.rms = features.rms; // RMS is a positive floating point number, bound only by the length and volume of the input signal
+          signals.value.zcr = features.zcr / ((bufferSize / 2) - 1); // value between (buffer size / 2) - 1, to clamp
           signals.value.energy = features.energy / bufferSize; // value between 0 and buffer size, to clamp
           signals.value.perceptualSpread = features.perceptualSpread; // 0 - 1
           signals.value.spectralSpread = features.spectralSpread / bufferSize / 2; // 0 - half of the FFT size. In Meyda the FFT size is equal to the buffer size
           
           // signals.value.chroma = features.chroma; // 12 values, 0 - 1
           // create an array where each value of the chroma array is repeated twice
-          signals.value.chroma = features.chroma.flatMap((x) => [x, x]);
+          signals.value.chroma = features.chroma.flatMap((x) => [x, x]); // already normalized
 
-          console.log(signals.value.spectralSpread);
         },
       });
       analyzer.start();

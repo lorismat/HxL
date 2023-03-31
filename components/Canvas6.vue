@@ -10,6 +10,8 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+
 
 const props = defineProps({
   id: {
@@ -23,7 +25,9 @@ let scene, renderer, camera, canvas, mesh, plane;
 
 const reqID = useState('reqID');
 const signals = useState('signals');
-const debug = false;
+const debug = true;
+
+let rmsFactor = 0;
 
 function init() {
   scene = new THREE.Scene();
@@ -45,7 +49,12 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
 
   const material = new THREE.ShaderMaterial({
     transparent:true,
@@ -88,7 +97,7 @@ function init() {
         vec3 pos = position;
         v_position = position;
         vUv = uv;
-        pos.z += noise(pos.xy / 200. + rms * 0.01) * 300.;
+        pos.z += noise(pos.xy / 200. + rms) * 300.;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
       }
     `,
@@ -150,6 +159,20 @@ function init() {
   });
   plane = new THREE.Mesh(planeGeometry, planeMaterial);
   scene.add(plane);
+
+  if (debug) {
+    const effectController = {
+      rmsFactor: 0.2,
+    };
+    const matChanger = function ( ) {
+      rmsFactor = effectController.rmsFactor;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'rmsFactor', 0, 4, 0.001 ).onChange( matChanger );
+    matChanger();
+  }
+
   
 }
 
@@ -161,10 +184,10 @@ function animate() {
   const time = performance.now() * 0.001;
 
   if (signals.value.rms != undefined && signals.value.rms > 0) {
-    mesh.material.uniforms.rms.value += signals.value.rms * 10.;
+    mesh.material.uniforms.rms.value += signals.value.rms * rmsFactor;
     mesh.material.uniforms.u_time.value = time;
 
-    plane.material.uniforms.rms.value += signals.value.rms * 10.;
+    plane.material.uniforms.rms.value += signals.value.rms * rmsFactor;
   } else {
     mesh.material.uniforms.rms.value = 0.;
     plane.material.uniforms.rms.value = 0.;
@@ -182,6 +205,14 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
+
   }
   
   window.addEventListener("resize", onWindowResize);

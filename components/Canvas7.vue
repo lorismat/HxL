@@ -9,6 +9,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
   id: {
@@ -18,12 +19,16 @@ const props = defineProps({
 });
 
 let stats;
-let scene, renderer, camera, canvas, mesh, controls; 
+let scene, renderer, camera, canvas; 
 let plane, plane2, plane3;
 
 const reqID = useState('reqID');
 const signals = useState('signals');
-const debug = false;
+const debug = true;
+
+let rmsForwardFactor = 0;
+let rmsBackwardFactor = 0;
+let rmsThreshold = 0;
 
 function init() {
   scene = new THREE.Scene();
@@ -45,7 +50,12 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
   
   const planeGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
   const planeMaterial = new THREE.ShaderMaterial({
@@ -82,6 +92,26 @@ function init() {
   plane2 = plane.clone();
   plane3 = plane.clone();
   scene.add(plane, plane2, plane3);
+
+  if (debug) {
+    const effectController = {
+      rmsForwardFactor: 0.8,
+      rmsBackwardFactor: 1.2,
+      rmsThreshold: 0.009
+    };
+    const matChanger = function ( ) {
+      rmsForwardFactor = effectController.rmsForwardFactor;
+      rmsBackwardFactor = effectController.rmsBackwardFactor;
+      rmsThreshold = effectController.rmsThreshold;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'rmsForwardFactor', 0, 3, 0.001 ).onChange( matChanger );
+    gui.add( effectController, 'rmsBackwardFactor', 0, 3, 0.001 ).onChange( matChanger );
+    gui.add( effectController, 'rmsThreshold', 0, 0.01, 0.0001 ).onChange( matChanger );
+    matChanger();
+  }
+
 }
 
 function animate() {
@@ -91,12 +121,12 @@ function animate() {
 
   const time = performance.now() * 0.001;
 
-  if (signals.value.rms != undefined && signals.value.rms > 0.0037) {
-    plane.rotation.x += Math.pow(signals.value.rms, 1.1);
-    plane2.rotation.y += Math.pow(signals.value.rms, 1.1);
+  if (signals.value.rms != undefined && signals.value.rms > rmsThreshold) {
+    plane.rotation.x += Math.pow(signals.value.rms, rmsForwardFactor);
+    plane2.rotation.y += Math.pow(signals.value.rms, rmsForwardFactor);
   } else if (signals.value.rms != undefined && signals.value.rms > 0.) {
-    plane.rotation.x -= Math.pow(signals.value.rms, 0.9);
-    plane2.rotation.y -= Math.pow(signals.value.rms, 0.9);
+    plane.rotation.x -= Math.pow(signals.value.rms, rmsBackwardFactor);
+    plane2.rotation.y -= Math.pow(signals.value.rms, rmsBackwardFactor);
   }
     else {
     plane.rotation.x = 0.0;
@@ -115,6 +145,14 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
+
   }
   
   window.addEventListener("resize", onWindowResize);

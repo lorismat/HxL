@@ -7,7 +7,6 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-// add gui
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
@@ -24,7 +23,7 @@ const reqID = useState('reqID');
 const signals = useState('signals');
 const debug = true;
 
-let spectralSpreadFactor = 20;
+let spectralSpreadFactor = 0;
 
 function init() {
   scene = new THREE.Scene();
@@ -118,7 +117,7 @@ function init() {
 
   if (debug) {
     const effectController = {
-      spectralSpreadFactor: 20,
+      spectralSpreadFactor: 16,
     };
     const matChanger = function ( ) {
       spectralSpreadFactor = effectController.spectralSpreadFactor;
@@ -127,7 +126,6 @@ function init() {
     gui.domElement.id = 'gui';
     gui.add( effectController, 'spectralSpreadFactor', 0, 50, 0.01 ).onChange( matChanger );
     matChanger();
-
   }
 }
 
@@ -155,7 +153,9 @@ onMounted(() => {
 
     if (document.getElementById("stats") != undefined) {
       const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
       stats.remove();
+      gui.remove();
     }
 
   }

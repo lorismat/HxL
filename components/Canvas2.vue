@@ -23,9 +23,9 @@ const reqID = useState('reqID');
 const signals = useState('signals');
 const debug = true;
 
-let change0 = 2;
-let change1 = 0.1;
-let change2 = 0.75;
+let change0 = 0;
+let change1 = 0;
+let change2 = 0;
 
 let inc = [0, 0, 0];
 

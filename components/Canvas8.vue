@@ -9,6 +9,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
   id: {
@@ -20,10 +21,11 @@ const props = defineProps({
 let stats;
 let scene, renderer, camera, canvas, mesh;
 
-const reqID = useState('reqID');
+let energyFactor = 0;
 
+const reqID = useState('reqID');
 const signals = useState('signals');
-const debug = false;
+const debug = true;
 
 function init() {
   scene = new THREE.Scene();
@@ -45,15 +47,19 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
       rms: { value: 0.0 },
       zcr: { value: 0.0 },
       energy: { value: 0.0 },
-      perceptualSpread: { value: 0.0 },
-      spectralSpread: { value: 0.0 },
+      energyInc: { value: 0.0 },
       u_time: { value: 0.0 },
     },
     vertexShader: `
@@ -69,8 +75,7 @@ function init() {
       uniform float rms;
       uniform float zcr;
       uniform float energy;
-      uniform float perceptualSpread;
-      uniform float spectralSpread;
+      uniform float energyInc;
       varying vec2 vUv;
 
       float sdCircle( in vec2 p, in float r ) {
@@ -130,25 +135,29 @@ function init() {
         float d = sdCircle(p, 0.75*0.5);
 
         float dd = sdCircle(
-          m + vec2( sin(u_time * 20. * f + u_time) * 0.4, cos(u_time * 20. * f) * 0.4),
-          0.15 * 0.5
+          m + vec2( sin(u_time * energyInc * f + u_time) * 0.35, cos(u_time * energyInc * f) * 0.35),
+          0.25 * 0.5
         );
 
+        /*
         float dddd = sdCircle(
-          m + vec2( sin(u_time * 20. * f) * 0.4, cos(u_time * 20. * f) * 0.4),
-          0.4 * 0.5
+          m + vec2( sin(u_time * 20. * f) * 0.7, cos(u_time * 20. * f) * 0.7),
+          0.
         );
+        */
 
-        col = mix(col, vec3(0.), smoothstep(0.,-0.001, smin(-d,dd, 0.05 + abs(sin(energy * 1. + u_time * 10.)) * 0.3) - border/8. ));
-        col = mix(col, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dd, 0.05 + abs(sin(energy * 1. + u_time * 10.)) * 0.3) - border ));
+        col = mix(col, vec3(0.), smoothstep(0.,-0.001, smin(-d,dd, 0.05 + abs(sin(energy * 1. + u_time * 10.)) * 0.2) - border/8. ));
+        col = mix(col, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dd, 0.05 + abs(sin(energy * 1. + u_time * 10.)) * 0.2) - border ));
 
+        /*
         col2 = mix(col2, vec3(0.), smoothstep(0.,-0.001, smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 + spectralSpread ) * 1. )) - border/8. ));
         col2 = mix(col2, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(2.) * 10. + u_time * 0.5 + spectralSpread ) * 1. )) - border ));
 
         col3 = mix(col3, vec3(0.), smoothstep(0.,-0.001, smin(-d,dddd, 0.05 + abs(noise( vec2(1.) * 10. + u_time * 0.1 ) * 1. )) - border/8. ));
         col3 = mix(col3, vec3(0., 0., 0.), smoothstep(-0.001,0., smin(-d,dddd, 0.05 + abs(noise( vec2(1.) * 10. + u_time * 0.1 ) * 1. )) - border ));
+        */
 
-        col += col2 + col3;
+        // col += col2 + col3;
 
         rms == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
         rms == 0. ?  col = mix(col, vec3(0.), 1. - smoothstep(r - t*0.5, r - t*0.5 + smoothFactor, length( abs(st) ))) : col = col;
@@ -161,6 +170,20 @@ function init() {
   const geometry = new THREE.PlaneGeometry(2000, 2000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+
+  if (debug) {
+    const effectController = {
+      energyFactor: 5,
+    };
+    const matChanger = function ( ) {
+      energyFactor = effectController.energyFactor;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'energyFactor', 0, 20, 0.01 ).onChange( matChanger );
+    matChanger();
+  }
+
 }
 
 function animate() {
@@ -174,15 +197,13 @@ function animate() {
     mesh.material.uniforms.u_time.value = time;
     mesh.material.uniforms.rms.value = signals.value.rms / 1.;
     mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
-    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
-    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
-    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread * 20;
+    mesh.material.uniforms.energy.value = signals.value.energy;
+    mesh.material.uniforms.energyInc.value += signals.value.energy * energyFactor;
   } else {
     mesh.material.uniforms.rms.value = 0.0;
     mesh.material.uniforms.zcr.value = 0.0;
     mesh.material.uniforms.energy.value = 0.75;
-    mesh.material.uniforms.perceptualSpread.value = 0.0;
-    mesh.material.uniforms.spectralSpread.value = 0.0;
+    mesh.material.uniforms.energyInc.value = 0.;
   }
 }
 
@@ -196,6 +217,14 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
+
   }
   
   window.addEventListener("resize", onWindowResize);

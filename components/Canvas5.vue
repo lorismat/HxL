@@ -9,6 +9,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
   id: {
@@ -22,7 +23,9 @@ let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
 const signals = useState('signals');
-const debug = false;
+const debug = true;
+
+let chromaFactor = 0;
 
 function init() {
   scene = new THREE.Scene();
@@ -44,7 +47,12 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
 
   const chromaArrSize = 24;
   const material = new THREE.ShaderMaterial({
@@ -111,8 +119,8 @@ function init() {
         col = mix(
           vec3(0.), 
           vec3(1.), 
-          smoothstep(0.52 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, 0.55 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, st.y) 
-          + 1. - smoothstep(0.44 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, 0.47 + sin(st.x * c * 10. + u_time * 1.2 + c * 2.) * 0.45, st.y)
+          smoothstep(0.52 + sin(st.x * c * float(int(coord.y * size)) + u_time * 1.2) * 0.45, 0.55 + sin(st.x * c * float(int(coord.y * size)) + u_time * 1.2) * 0.45, st.y) 
+          + 1. - smoothstep(0.44 + sin(st.x * c * float(int(coord.y * size)) + u_time * 1.2) * 0.45, 0.47 + sin(st.x * c * float(int(coord.y * size)) + u_time * 1.2) * 0.45, st.y)
         );
 
         col = 1.-col;
@@ -132,6 +140,19 @@ function init() {
   const geometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+
+  if (debug) {
+    const effectController = {
+      chromaFactor: 1,
+    };
+    const matChanger = function ( ) {
+      chromaFactor = effectController.chromaFactor;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'chromaFactor', 0, 5, 0.01 ).onChange( matChanger );
+    matChanger();
+  }
   
 }
 
@@ -145,8 +166,7 @@ function animate() {
 
   if (signals.value.rms != undefined) {
     const chroma = signals.value.chroma;
-    mesh.material.uniforms.cArray.value = chroma;
-    console.log(chroma);
+    mesh.material.uniforms.cArray.value = chroma.map(x => x * chromaFactor);
     mesh.material.uniforms.rms.value = signals.value.rms;
   }
 
@@ -162,6 +182,13 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
   }
   
   window.addEventListener("resize", onWindowResize);
