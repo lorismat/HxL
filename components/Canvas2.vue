@@ -7,6 +7,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
   id: {
@@ -19,12 +20,13 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
-
 const signals = useState('signals');
-const debug = false;
+const debug = true;
 
-// incrementing frequencies and init array
+let change0 = 0;
+let change1 = 0;
+let change2 = 0;
+
 let inc = [0, 0, 0];
 
 function init() {
@@ -47,7 +49,12 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -100,7 +107,7 @@ function init() {
         st = st * 2. - 1.;        
         vec3 col = vec3(1.);
 
-        float t = 0.007; // thickness
+        float t = 0.007;
         float smoothFactor = 0.003;
 
         float r = 0.75;
@@ -114,9 +121,9 @@ function init() {
         val2 = val2 / 22050.0;
         val3 = val3 / 22050.0;
 
-        val = 0.4 + clamp(0. , 0.39, abs(noise(st/100. + u_f0 * 0.01 ) ));
-        val2 = 0.5 + clamp(0. , 0.49, abs(noise(st/100. + u_f1 * 0.01 ) ));
-        val3 = 0.6 + clamp(0., 0.39, abs(noise(st/100. + u_f2 * 0.01 ) ));
+        val = 0.4 + clamp(0. , 0.39, 2. * abs(noise(st/100. + u_f0 * 0.01 ) ));
+        val2 = 0.5 + clamp(0. , 0.49, 2. * abs(noise(st/100. + u_f1 * 0.01 ) ));
+        val3 = 0.6 + clamp(0., 0.39, 2. * abs(noise(st/100. + u_f2 * 0.01 ) ));
 
         col = mix(col, vec3(0.0), smoothstep(val, val + smoothFactor, length( abs(st) )));
         col = mix(col, vec3(1.0), smoothstep(val + t, val + smoothFactor + t, length( abs(st) )));
@@ -129,18 +136,36 @@ function init() {
 
         col = 1. - col;
 
-      fArray[0] + fArray[1] + fArray[2] == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
-      fArray[0] + fArray[1] + fArray[2] == 0. ? col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) ))) : col = col;
+        fArray[0] + fArray[1] + fArray[2] == 0. ? col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st) ))) : col = col;
+        fArray[0] + fArray[1] + fArray[2] == 0. ? col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st) ))) : col = col;
 
         gl_FragColor = vec4(col, 1.);
       }
     `,
   });
 
-  // plane geometry with threejs
   const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+
+  if (debug) {
+    const effectController = {
+      change0: 2,
+      change1: 0.1,
+      change2: 0.75,
+    };
+    const matChanger = function ( ) {
+      change0 = effectController.change0;
+      change1 = effectController.change1;
+      change2 = effectController.change2;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'change0', 0, 10, 0.01 ).onChange( matChanger );
+    gui.add( effectController, 'change1', 0, 10, 0.01 ).onChange( matChanger );
+    gui.add( effectController, 'change2', 0, 10, 0.01 ).onChange( matChanger );
+    matChanger();
+  }
   
 }
 
@@ -154,11 +179,11 @@ function animate() {
     for (let i = 0; i < fArray.length; i++) {
       fArray[i] = Math.abs(fArray[i]);
       if (fArray[i] > 100) {
-        inc[i] += 2;
+        inc[i] += change0;
       } else if (fArray[i] > 0.5) {
-        inc[i] += 0.1;
-      } else if (fArray[i] == 0) {
-        inc[i] = 0.75;
+        inc[i] += change1;
+      } else if (fArray[i] > 0.1) {
+        inc[i] += change2;
       }
     }
 
@@ -166,12 +191,12 @@ function animate() {
     mesh.material.uniforms.u_f0.value = inc[0];
     mesh.material.uniforms.u_f1.value = inc[1];
     mesh.material.uniforms.u_f2.value = inc[2];
+
   } else {
     const fArray = [];
     for (let i = 0; i < signals.value.arrSize; i++) {
       fArray.push(0);
     }
-    console.log(fArray);
     mesh.material.uniforms.fArray.value = fArray;
   }
 }
@@ -186,8 +211,13 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
   }
-
 
   window.addEventListener("resize", onWindowResize);
   init();

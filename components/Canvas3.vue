@@ -10,6 +10,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
   id: {
@@ -22,9 +23,14 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
 const signals = useState('signals');
-const debug = false;
+const debug = true;
+
+let rmsFactor = 0;
+let zcrFactor = 0;
+let energyFactor = 0;
+let perceptualSpreadFactor = 0;
+let spectralSpreadFactor = 0;
 
 function init() {
   scene = new THREE.Scene();
@@ -46,7 +52,12 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -66,7 +77,6 @@ function init() {
       }
     `,
     fragmentShader: `
-    
       uniform float u_time;
       uniform float rms;
       uniform float zcr;
@@ -104,15 +114,15 @@ function init() {
         st = st * 2. - 1.;
         vec3 col = vec3(1.);
     
-        float t = 0.007; // thickness
+        float t = 0.007;
         float smoothFactor = 0.003;
         float r = 0.75;
 
         col = mix(vec3(0.), vec3(1.), 1. - smoothstep(r, r + smoothFactor, length( abs(st ) )));
         col = mix(col, vec3(0.), 1. - smoothstep(r - t, r - t + smoothFactor, length( abs(st ) )));
 
-        col = mix(col, vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st - sin(u_time + rms * 10.) * vec2(0.2) ) )));
-        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st - sin(u_time + rms * 10.) * vec2(0.2) ) )));
+        col = mix(col, vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st - sin(u_time + rms) * vec2(0.2) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st - sin(u_time + rms) * vec2(0.2) ) )));
 
         col = mix(col, vec3(1.), 1. - smoothstep(zcr, zcr + smoothFactor, length( abs(st - cos(u_time) * vec2(0.1) ) )));
         col = mix(col, vec3(0.), 1. - smoothstep(zcr - t, zcr - t + smoothFactor, length( abs(st - cos(u_time) * vec2(0.1) ) )));
@@ -137,6 +147,31 @@ function init() {
   const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+
+  if (debug) {
+    const effectController = {
+      rmsFactor: 0.4,
+      zcrFactor: 0.5,
+      energyFactor: 2.5,
+      perceptualSpreadFactor: 0.1,
+      spectralSpreadFactor: 4,
+    };
+    const matChanger = function ( ) {
+      rmsFactor = effectController.rmsFactor;
+      zcrFactor = effectController.zcrFactor;
+      energyFactor = effectController.energyFactor;
+      perceptualSpreadFactor = effectController.perceptualSpreadFactor;
+      spectralSpreadFactor = effectController.spectralSpreadFactor;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'rmsFactor', 0, 5, 0.01 ).onChange( matChanger );
+    gui.add( effectController, 'zcrFactor', 0, 5, 0.001 ).onChange( matChanger );
+    gui.add( effectController, 'energyFactor', 0, 10, 0.001 ).onChange( matChanger );
+    gui.add( effectController, 'perceptualSpreadFactor', 0, 1, 0.001 ).onChange( matChanger );
+    gui.add( effectController, 'spectralSpreadFactor', 0, 10, 0.01 ).onChange( matChanger );
+    matChanger();
+  }
   
 }
 
@@ -147,14 +182,13 @@ function animate() {
 
   const time = performance.now() * 0.001;
   
-
   if (signals.value.rms != undefined && signals.value.rms > 0) {
     mesh.material.uniforms.u_time.value = time;
-    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
-    mesh.material.uniforms.zcr.value = signals.value.zcr / 100.;
-    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
-    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 10.;
-    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+    mesh.material.uniforms.rms.value = signals.value.rms * rmsFactor;
+    mesh.material.uniforms.zcr.value = signals.value.zcr * zcrFactor;
+    mesh.material.uniforms.energy.value = signals.value.energy * energyFactor;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread * perceptualSpreadFactor;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread * spectralSpreadFactor;
   } else {
     mesh.material.uniforms.u_time.value = 0;
     mesh.material.uniforms.rms.value = 0.0;
@@ -176,6 +210,12 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
   }
   
   window.addEventListener("resize", onWindowResize);

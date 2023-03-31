@@ -20,11 +20,17 @@ main {
   // cursor: none;
 }
 
-canvas {
+canvas .debug {
   top:0;
   left:0;
   position:fixed;
   z-index: 0;
+}
+
+/* GUI Interface */
+.lil-gui.autoPlace {
+  height: auto;
+  max-height: none;
 }
 
 .index {
