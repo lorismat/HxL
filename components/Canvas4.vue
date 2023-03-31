@@ -7,6 +7,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
   id: {
@@ -19,9 +20,12 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
 const signals = useState('signals');
-const debug = false;
+const debug = true;
+
+let rmsFactor = 0;
+let energyFactor = 0;
+let perceptualSpreadFactor = 0;
 
 function init() {
   scene = new THREE.Scene();
@@ -43,7 +47,12 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -61,13 +70,11 @@ function init() {
       }
     `,
     fragmentShader: `
-    
       uniform float clean;
       uniform float rms;
       uniform float zcr;
       uniform float energy;
       uniform float perceptualSpread;
-      uniform float spectralSpread;
 
       varying vec2 vUv;
 
@@ -97,18 +104,18 @@ function init() {
 
         vec2 st = vUv;
         st = st * 2. - 1.;
-        float t = 0.007; // thickness
+
+        float t = 0.007;
         float smoothFactor = 0.003;
         float r = 0.75;
 
         vec3 col = vec3(1.);
     
-        // middle, background
         col = mix(vec3(0.), vec3(1.), 1. - smoothstep(perceptualSpread, perceptualSpread + smoothFactor, length( abs(st) )));
         col = mix(col, vec3(0.), 1. - smoothstep(perceptualSpread - t, perceptualSpread - t + smoothFactor, length( abs(st) )));
 
-        col = mix(col, vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st * 0.6 + vec2(noise(st * pow(rms * 4.5,2.)) * 0.1) ) )));
-        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st * 0.6 + vec2(noise(st * pow(rms * 4.5,2.)) * 0.1) ) )));
+        col = mix(col, vec3(1.), 1. - smoothstep(rms, rms + smoothFactor, length( abs(st * 0.6 + vec2(noise(st * pow(rms,2.)) * 0.1) ) )));
+        col = mix(col, vec3(0.), 1. - smoothstep(rms - t, rms - t + smoothFactor, length( abs(st * 0.6 + vec2(noise(st * pow(rms,2.)) * 0.1) ) )));
 
         col = mix(col, vec3(1.), 1. - smoothstep(energy, energy + smoothFactor, length( abs(st * 0.75 + vec2(noise(st * 10.) * 0.01) ) )));
         col = mix(col, vec3(0.), 1. - smoothstep(energy - t, energy - t + smoothFactor, length( abs(st * 0.75 + vec2(noise(st * 10.) * 0.01) ) )));
@@ -121,10 +128,28 @@ function init() {
     `,
   });
 
-  // plane geometry with threejs
   const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+
+  if (debug) {
+    const effectController = {
+      rmsFactor: 1.,
+      energyFactor: 4,
+      perceptualSpreadFactor: 0.9,
+    };
+    const matChanger = function ( ) {
+      rmsFactor = effectController.rmsFactor;
+      energyFactor = effectController.energyFactor;
+      perceptualSpreadFactor = effectController.perceptualSpreadFactor;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'rmsFactor', 0, 3, 0.01 ).onChange( matChanger );
+    gui.add( effectController, 'energyFactor', 0, 5, 0.01 ).onChange( matChanger );
+    gui.add( effectController, 'perceptualSpreadFactor', 0, 1, 0.01 ).onChange( matChanger );
+    matChanger();
+  }
   
 }
 
@@ -135,9 +160,9 @@ function animate() {
   stats.update();
 
   if (signals.value.rms != undefined && signals.value.rms > 0) {
-    mesh.material.uniforms.rms.value = signals.value.rms / 1.;
-    mesh.material.uniforms.energy.value = signals.value.energy / 100.;
-    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread / 1.25;
+    mesh.material.uniforms.rms.value = signals.value.rms * rmsFactor;
+    mesh.material.uniforms.energy.value = signals.value.energy * energyFactor;
+    mesh.material.uniforms.perceptualSpread.value = signals.value.perceptualSpread * perceptualSpreadFactor;
 
     mesh.material.uniforms.clean.value = 1.;
   } else {
@@ -147,7 +172,6 @@ function animate() {
 
     mesh.material.uniforms.clean.value = 0.;
   }
-
 }
 
 function onWindowResize() {
@@ -160,6 +184,13 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
   }
 
   

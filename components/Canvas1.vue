@@ -7,6 +7,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
   id: {
@@ -19,9 +20,10 @@ let stats;
 let scene, renderer, camera, canvas, mesh;
 
 const reqID = useState('reqID');
-
 const signals = useState('signals');
-const debug = false;
+const debug = true;
+
+let spectralSpreadFactor = 0;
 
 function init() {
   scene = new THREE.Scene();
@@ -43,9 +45,13 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
 
-  // create shader material
   const material = new THREE.ShaderMaterial({
     uniforms: {
       spectralSpread: { value: 0.0 },
@@ -59,7 +65,6 @@ function init() {
       }
     `,
     fragmentShader: `
-
       uniform float spectralSpread;
       varying vec2 vUv;
 
@@ -92,11 +97,10 @@ function init() {
         st = st * 2. - 1.;
         vec3 col = vec3(1.);
     
-        float t = 0.007; // thickness
+        float t = 0.007;
         float smoothFactor = 0.003;
 
-        float val = 0.75 + noise(st + spectralSpread * 10.) * spectralSpread * 10.;
-
+        float val = 0.75 + noise(st + spectralSpread) * spectralSpread;
         spectralSpread == 0.75 ? val = 0.75 : val = val;
         
         col = mix(vec3(0.), vec3(1.), 1. - smoothstep(val, val + smoothFactor, length( abs(st) )));
@@ -107,24 +111,33 @@ function init() {
     `,
   });
 
-  // plane geometry with threejs
   const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
-  
+
+  if (debug) {
+    const effectController = {
+      spectralSpreadFactor: 16,
+    };
+    const matChanger = function ( ) {
+      spectralSpreadFactor = effectController.spectralSpreadFactor;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'spectralSpreadFactor', 0, 50, 0.01 ).onChange( matChanger );
+    matChanger();
+  }
 }
 
 function animate() {
   reqID.value = requestAnimationFrame(animate);
   renderer.render(scene, camera);
   stats.update();
-
   if (signals.value.rms != undefined && signals.value.rms > 0) {
-    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread / 255.;
+    mesh.material.uniforms.spectralSpread.value = signals.value.spectralSpread * spectralSpreadFactor;
   } else {
     mesh.material.uniforms.spectralSpread.value = 0.75;
   }
-
 }
 
 function onWindowResize() {
@@ -137,6 +150,14 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
+
   }
 
   window.addEventListener("resize", onWindowResize);

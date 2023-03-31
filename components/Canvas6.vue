@@ -10,8 +10,7 @@
 <script setup>
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-// add orbit controls
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 
 const props = defineProps({
@@ -22,11 +21,13 @@ const props = defineProps({
 });
 
 let stats;
-let scene, renderer, camera, canvas, mesh, controls;
+let scene, renderer, camera, canvas, mesh, plane;
 
 const reqID = useState('reqID');
 const signals = useState('signals');
-const debug = false;
+const debug = true;
+
+let rmsFactor = 0;
 
 function init() {
   scene = new THREE.Scene();
@@ -48,7 +49,12 @@ function init() {
   camera.lookAt( scene.position );
 
   stats = new Stats();
-  if (debug) document.body.appendChild( stats.dom );
+  if (debug) {
+    stats.domElement.classList.add('debug');
+    stats.domElement.id = 'stats';
+    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
+    document.body.appendChild(stats.domElement);
+  }
 
   const material = new THREE.ShaderMaterial({
     transparent:true,
@@ -91,9 +97,7 @@ function init() {
         vec3 pos = position;
         v_position = position;
         vUv = uv;
-
-        pos.z += noise(pos.xy / 200. + rms * 0.01) * 300.;
-
+        pos.z += noise(pos.xy / 200. + rms) * 300.;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
       }
     `,
@@ -117,14 +121,15 @@ function init() {
     `
   });
 
-  // create a sphere and add it to the scene
   const geometry = new THREE.SphereGeometry(500, 128*2, 128*2);
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
 
-  // create a plane geometry and add it to the scene
   const planeGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
   const planeMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      rms: { value: 0.0 },
+    },
     vertexShader: `
       varying vec2 vUv;
       void main() {
@@ -134,26 +139,40 @@ function init() {
       }
     `,
     fragmentShader: `
+      uniform float rms;
       varying vec2 vUv;
+
       void main() {
         vec2 st = vUv;
         st = st * 2. - 1.;
         vec3 col = vec3(1.);
-        float t = 0.007; // thickness
+        float t = 0.007;
         float smoothFactor = 0.003;
         col = mix(vec3(0.), vec3(1.), 1. - smoothstep(0.75, 0.75 + smoothFactor, length( abs(st) )));
         col = mix(col, vec3(0.), 1. - smoothstep(0.75 - t, 0.75 - t + smoothFactor,length( abs(st) )));
+
+        rms == 0. ? col = col : col = vec3(0.);
+
         gl_FragColor = vec4(col, 1.);
       }
     `,
   });
-  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  plane = new THREE.Mesh(planeGeometry, planeMaterial);
   scene.add(plane);
 
-  // controls
-  // controls = new OrbitControls(camera, renderer.domElement);
-  // controls.enableDamping = true;
-  // controls.dampingFactor = 0.05;
+  if (debug) {
+    const effectController = {
+      rmsFactor: 0.2,
+    };
+    const matChanger = function ( ) {
+      rmsFactor = effectController.rmsFactor;
+    }
+    const gui = new GUI();
+    gui.domElement.id = 'gui';
+    gui.add( effectController, 'rmsFactor', 0, 4, 0.001 ).onChange( matChanger );
+    matChanger();
+  }
+
   
 }
 
@@ -165,15 +184,14 @@ function animate() {
   const time = performance.now() * 0.001;
 
   if (signals.value.rms != undefined && signals.value.rms > 0) {
-    mesh.material.uniforms.rms.value += signals.value.rms * 10.;
+    mesh.material.uniforms.rms.value += signals.value.rms * rmsFactor;
     mesh.material.uniforms.u_time.value = time;
+
+    plane.material.uniforms.rms.value += signals.value.rms * rmsFactor;
   } else {
     mesh.material.uniforms.rms.value = 0.;
+    plane.material.uniforms.rms.value = 0.;
   }
-
-  // update controls
-  // controls.update();
-
 
 }
 
@@ -187,6 +205,14 @@ onMounted(() => {
 
   if (reqID.value != undefined && reqID.value != 0) {
     cancelAnimationFrame(reqID.value);
+
+    if (document.getElementById("stats") != undefined) {
+      const stats = document.getElementById("stats");
+      const gui = document.getElementById("gui");
+      stats.remove();
+      gui.remove();
+    }
+
   }
   
   window.addEventListener("resize", onWindowResize);
