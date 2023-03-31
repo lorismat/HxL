@@ -18,6 +18,7 @@
 
 <script setup>
 import gsap from 'gsap'
+import items from '@/data/items.json'
 
 let wrapper = null
 let storedScroll = 0
@@ -29,6 +30,8 @@ const rows = ref([])
 const cells = ref([])
 
 onMounted(() => {
+    console.log(items)
+  
     wrapper = document.querySelector('main')
     setupCells()
     window.addEventListener('resize', onResize)
@@ -188,10 +191,5 @@ function exitFullscreen(cell) {
 function onResize() {
     cells.value.forEach(element => element.removeEventListener('click', onCellClick))
     setupCells()
-}
-
-// TODO: To global utils
-function pad(num, size) {
-    return ('000000000' + num).substr(-size)
 }
 </script>

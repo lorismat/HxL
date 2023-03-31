@@ -1,0 +1,59 @@
+[
+    { 
+        "canvas": 0,
+        "songData": {
+            "file": "",
+            "song": "",
+            "artist": ""
+        },
+        "comingsoon": false
+    },
+    { 
+        "canvas": 1,
+        "songData": {
+            "file": "",
+            "song": "",
+            "artist": ""
+        },
+        "comingsoon": false
+    },
+    { 
+        "canvas": 0,
+        "songData": {
+            "file": "",
+            "song": "",
+            "artist": ""
+        },
+        "comingsoon": false
+    },
+    {},
+    {},
+    {},
+    { 
+        "canvas": 0,
+        "songData": {
+            "file": "",
+            "song": "",
+            "artist": ""
+        },
+        "comingsoon": false
+    },
+    { 
+        "canvas": 0,
+        "songData": {
+            "file": "",
+            "song": "",
+            "artist": ""
+        },
+        "comingsoon": true
+    },
+    { 
+        "canvas": 0,
+        "songData": {
+            "file": "",
+            "song": "",
+            "artist": ""
+        },
+        "comingsoon": true
+    }
+]

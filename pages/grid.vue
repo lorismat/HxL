@@ -7,4 +7,4 @@
 
       <Grid />
     </main>
-  </template>
+</template>

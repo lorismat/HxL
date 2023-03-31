@@ -12,6 +12,7 @@ body > div {
     right: var(--main-padding-x);
     bottom: var(--main-padding-y); 
     left: var(--main-padding-x);
+    overflow-x: hidden;
     overflow-y: auto;
     box-shadow: 0 0 0 1px var(--color-borders);
     
@@ -44,6 +45,22 @@ body > div {
             box-shadow: -1px -1px 0 0 var(--color-borders);
         }
     }
+
+    // --scrollbar-width: 6px;
+    // &::-webkit-scrollbar {
+    //     width: var(--scrollbar-width);
+    //     height: var(--scrollbar-width);
+    // }
+    // &::-webkit-scrollbar-track {
+    //     background-color: var(--color-bg);
+    //     box-shadow: inset 1px 0 0 0 var(--color-borders);
+    // }
+    // &::-webkit-scrollbar-thumb {
+    //     // box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    //     background-color: var(--color-muted-dark);
+    // }
+    // scrollbar-color: var(--color-muted-dark) var(--color-bg);
+    // scrollbar-width: thin;
 }
 
 

@@ -12,9 +12,9 @@ html, body {
     letter-spacing: var(--letter-spacing);
     text-transform: uppercase;
 
-    // -webkit-font-smoothing: antialiased;
-    // -moz-osx-font-smoothing: grayscale;
-    // text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     
     -webkit-tap-highlight-color: transparent;
     -webkit-user-select: none; /* Safari */
@@ -40,10 +40,10 @@ html,
     -ms-overflow-style: none; /* IE */
     scrollbar-width: none;  /* Firefox */
 }
-html::-webkit-scrollbar,
-*::-webkit-scrollbar { 
-    display: none;  /* Safari and Chrome */
-}
+// html::-webkit-scrollbar,
+// *::-webkit-scrollbar { 
+//     display: none;  /* Safari and Chrome */
+// }
 
 button {
     font-family: var(--font-family);
