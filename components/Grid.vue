@@ -48,10 +48,10 @@ onUnmounted(() => {
 })
 
 function setupCells() {
-    if (window.innerWidth < 600) {
+    if (win.w < 600) {
         numColumns.value = 2
         numRows.value = Math.ceil((items.length / numColumns.value))
-    } else if (window.innerWidth < 1200) {
+    } else if (win.w < 1200) {
         numColumns.value = 3
         numRows.value = Math.ceil((items.length / numColumns.value))
     } else {
