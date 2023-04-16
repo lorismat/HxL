@@ -11,10 +11,16 @@
 
 @import '04_components/pointer';
 @import '04_components/grid';
+@import '04_components/item';
+@import '04_components/marquee';
 
 
 
 // Hacks
+.hidden {
+  display: none;
+}
+
 main {
   height: 100%;
   // cursor: none;

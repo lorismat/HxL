@@ -1,16 +1,23 @@
 <template>
-    <div class="hl-grid" :style="{ '--columns': numColumns }" :set="counter = 1">
+    <div 
+        class="hl-grid"
+        :style="{ '--columns': numColumns }" 
+        :setIndex="index = 0" 
+        :setItem="item = 1">
         <div class="hl-grid__row" v-for="(row, rowIndex) in numRows" :key="rowIndex" ref="rows">
-            <div 
+            <div
                 class="hl-grid__cell" v-for="(column, columnIndex) in numColumns" 
+                :class="{ 'is-disabled': isEmptyCell(index) || items[index].comingsoon }"
                 :key="columnIndex" 
-                ref="cells" 
                 :data-row="rowIndex" 
                 :data-column="columnIndex"
-                :data-index="counter">
+                :data-index="index"
+                ref="cells">
+                
+                <Item v-if="!isEmptyCell(index)" :item="items[index]" :index="item" />
 
-                <span class="hl-grid__cell__index">{{ pad(counter++, 2) }}</span>
-                <button class="hl-close-btn">Close</button>
+                <div v-if="!isEmptyCell(index)" class="hidden" :setItem="item++" />
+                <div class="hidden" :setIndex="index++" />
             </div>
         </div>
     </div>
@@ -30,9 +37,7 @@ const rows = ref([])
 const cells = ref([])
 
 onMounted(() => {
-    console.log(items)
-  
-    wrapper = document.querySelector('main')
+    wrapper = document.querySelector('.hl-main')
     setupCells()
     window.addEventListener('resize', onResize)
 })
@@ -45,13 +50,13 @@ onUnmounted(() => {
 function setupCells() {
     if (window.innerWidth < 600) {
         numColumns.value = 2
-        numRows.value = 8
+        numRows.value = Math.ceil((items.length / numColumns.value))
     } else if (window.innerWidth < 1200) {
         numColumns.value = 3
-        numRows.value = 6
+        numRows.value = Math.ceil((items.length / numColumns.value))
     } else {
         numColumns.value = 4
-        numRows.value = 4
+        numRows.value = Math.ceil((items.length / numColumns.value))
     }
     
     nextTick(() => {
@@ -73,8 +78,11 @@ function onCellClick(e) {
 }
 
 function goFullscreen(cell) {
-    cell.el.classList.add('is-fullscreen')
-    wrapper.classList.add('is-fullscreen')
+    wrapper.classList.add('transition-active')
+    cell.el.classList.add('transition-active')
+    cell.el.querySelector('.hl-item').classList.add('transition-active')
+    
+    const closeBtn = cell.el.querySelector('.hl-close-btn')
 
     const row = rows.value[cell.row]
     const column = cell.column
@@ -85,15 +93,17 @@ function goFullscreen(cell) {
     gsap.set(wrapper, { overflow: 'hidden' })
     storedScroll = wrapper.scrollTop
     
-    const closeBtn = cell.el.querySelector('.hl-close-btn')
-    gsap.set(closeBtn, { autoAlpha: 0 })
-    
     const tl = gsap.timeline({
         onComplete: () => {
             closeBtn.addEventListener('click', onCloseClick)
-            gsap.to(closeBtn, { autoAlpha: 1, 
-                duration: .3,
-            })
+
+            wrapper.classList.remove('transition-active')
+            cell.el.classList.remove('transition-active')
+            cell.el.querySelector('.hl-item').classList.remove('transition-active')
+
+            wrapper.classList.add('is-fullscreen')
+            cell.el.classList.add('is-fullscreen')
+            cell.el.querySelector('.hl-item').classList.add('is-fullscreen')
         }
     })
 
@@ -142,10 +152,9 @@ function exitFullscreen(cell) {
     const duration = .6
     const ease = 'expo.inOut'
 
-    gsap.to(cell.el.querySelector('.hl-close-btn'), {
-        autoAlpha: 0,
-        duration: .2,
-    })
+    wrapper.classList.add('transition-active')
+    cell.el.classList.add('transition-active')
+    cell.el.querySelector('.hl-item').classList.add('transition-active')
 
     const tl = gsap.timeline({
         onComplete: () => {
@@ -159,9 +168,10 @@ function exitFullscreen(cell) {
                 flexBasis: '',
                 height: '',
             })
-
-            cell.el.classList.remove('is-fullscreen')
-            wrapper.classList.remove('is-fullscreen')
+    
+            wrapper.classList.remove('is-fullscreen', 'transition-active')
+            cell.el.classList.remove('is-fullscreen', 'transition-active')
+            cell.el.querySelector('.hl-item').classList.remove('is-fullscreen', 'transition-active')
         }
     })
 
@@ -186,6 +196,10 @@ function exitFullscreen(cell) {
         duration: duration,
         ease: ease,
     }, 0)
+}
+
+function isEmptyCell(cell) {
+    return cell > items.length - 1 || !Object.keys(items[cell]).length
 }
 
 function onResize() {

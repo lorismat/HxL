@@ -3,8 +3,8 @@
         "canvas": 0,
         "songData": {
             "file": "",
-            "song": "",
-            "artist": ""
+            "song": "Song name 1",
+            "artist": "Artist"
         },
         "comingsoon": false
     },
@@ -12,8 +12,8 @@
         "canvas": 1,
         "songData": {
             "file": "",
-            "song": "",
-            "artist": ""
+            "song": "Song name 2",
+            "artist": "Artist"
         },
         "comingsoon": false
     },
@@ -21,8 +21,8 @@
         "canvas": 0,
         "songData": {
             "file": "",
-            "song": "",
-            "artist": ""
+            "song": "Song name 3",
+            "artist": "Artist"
         },
         "comingsoon": false
     },
@@ -33,8 +33,8 @@
         "canvas": 0,
         "songData": {
             "file": "",
-            "song": "",
-            "artist": ""
+            "song": "Song name 4",
+            "artist": "Artist"
         },
         "comingsoon": false
     },
@@ -42,8 +42,8 @@
         "canvas": 0,
         "songData": {
             "file": "",
-            "song": "",
-            "artist": ""
+            "song": "Song name 5",
+            "artist": "Artist"
         },
         "comingsoon": true
     },
@@ -51,8 +51,8 @@
         "canvas": 0,
         "songData": {
             "file": "",
-            "song": "",
-            "artist": ""
+            "song": "Song name 6",
+            "artist": "Artist"
         },
         "comingsoon": true
     }

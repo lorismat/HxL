@@ -1,0 +1,39 @@
+.hl-marquee {
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: baseline;
+    left: 0;
+    top: 0;
+
+    &__content {
+        width: 100%;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: baseline;
+    }
+
+    &__row {
+        display: inline-block;
+        animation: marqueeLeft 12s linear infinite;
+    }
+
+    &__string {
+        span {
+            padding-left: 1em;
+        }
+    }
+}
+
+@keyframes marqueeLeft {
+    to {
+      transform: translateX(-100%)
+    }
+  }
+  
+  
+  @keyframes marqueeRight {
+    to {
+      transform: translateX(100%)
+    }
+  }
