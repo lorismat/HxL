@@ -4,6 +4,7 @@
         :style="{ '--columns': numColumns }" 
         :setIndex="index = 0" 
         :setItem="item = 1">
+        
         <div class="hl-grid__row" v-for="(row, rowIndex) in numRows" :key="rowIndex" ref="rows">
             <div
                 class="hl-grid__cell" v-for="(column, columnIndex) in numColumns" 

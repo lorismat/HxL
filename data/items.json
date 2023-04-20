@@ -1,28 +1,28 @@
 [
     { 
-        "canvas": 0,
-        "songData": {
-            "file": "",
-            "song": "Song name 1",
-            "artist": "Artist"
-        },
-        "comingsoon": false
-    },
-    { 
         "canvas": 1,
         "songData": {
-            "file": "",
-            "song": "Song name 2",
-            "artist": "Artist"
+            "file": "/nicolas-jaar/America-I-m-for-the-Birds.mp3",
+            "song": "America I'm for the birds",
+            "artist": "Nicolas Jaar"
         },
         "comingsoon": false
     },
     { 
-        "canvas": 0,
+        "canvas": 2,
         "songData": {
-            "file": "",
-            "song": "Song name 3",
-            "artist": "Artist"
+            "file": "/nicolas-jaar/Fight.mp3",
+            "song": "Fight",
+            "artist": "Nicolas Jaar"
+        },
+        "comingsoon": false
+    },
+    { 
+        "canvas": 3,
+        "songData": {
+            "file": "/nicolas-jaar/I-Got-a.mp3",
+            "song": "I got a",
+            "artist": "Nicolas Jaar"
         },
         "comingsoon": false
     },
@@ -30,29 +30,29 @@
     {},
     {},
     { 
-        "canvas": 0,
+        "canvas": 4,
         "songData": {
-            "file": "",
-            "song": "Song name 4",
-            "artist": "Artist"
+            "file": "/nicolas-jaar/Leaves.mp3",
+            "song": "Leaves",
+            "artist": "Nicolas Jaar"
         },
         "comingsoon": false
     },
     { 
-        "canvas": 0,
+        "canvas": 5,
         "songData": {
-            "file": "",
-            "song": "Song name 5",
-            "artist": "Artist"
+            "file": "/nicolas-jaar/Mi-Mujer.mp3",
+            "song": "Mi Mujer",
+            "artist": "Nicolas Jaar"
         },
         "comingsoon": true
     },
     { 
-        "canvas": 0,
+        "canvas": 6,
         "songData": {
-            "file": "",
-            "song": "Song name 6",
-            "artist": "Artist"
+            "file": "/nicolas-jaar/No-one-is-looking-at-U.mp3",
+            "song": "No one is looking at you",
+            "artist": "Nicolas Jaar"
         },
         "comingsoon": true
     }

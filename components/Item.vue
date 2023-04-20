@@ -1,9 +1,24 @@
 <template>
-    <article class="hl-item" :class="{ 'is-disabled': item.comingsoon }">
+    <article class="hl-item" :class="{ 'is-disabled': item.comingsoon }" ref="itemElement">
         <div class="hl-item__top">
             <span class="hl-item__index hide-on-fullscreen">{{ pad(index, 2) }}</span>
             <IconPlay class="hide-on-fullscreen"/>
-            <button class="hl-close-btn">Close</button>
+            <button class="hl-close-btn" @click="stopSound">Close</button>
+        </div>
+
+        <div class="hl-item__main">
+            <Canvas :canvasId="item.canvas" />
+
+            <audio
+                v-if="item.songData.file"
+                class="hidden"
+                controls
+                loop
+                crossorigin="anonymous"
+                id="audio"
+                ref="audio"
+                :src="`sounds/${item.songData.file}`"
+            ></audio>
         </div>
         
         <div class="hl-item__bottom">
@@ -20,7 +35,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
     index: {
         type: Number,
         default: 0
@@ -30,4 +45,21 @@ defineProps({
         default: null
     }
 })
+
+const audio = ref(null)
+const itemElement = ref(null)
+
+onMounted(() => {
+    itemElement.value.addEventListener('click', playSound)
+})
+
+function playSound() {
+    audio.value.play()
+    itemElement.value.removeEventListener('click', playSound)
+}
+
+function stopSound() {
+    audio.value.pause()
+    setTimeout(() => itemElement.value.addEventListener('click', playSound))
+}
 </script>
