@@ -30,12 +30,29 @@ import items from '@/data/items.json'
 
 let wrapper = null
 let storedScroll = 0
-let cellSize = 0
+
+
 
 const numColumns = ref(0)
 const numRows = ref(0)
 const rows = ref([])
 const cells = ref([])
+
+// init signals captured in Item / to move in Setup?
+const signals = useState('signals', () => {
+  return {
+    arrSize: 128,
+    id: 0
+  }
+})
+
+const reqId = useState('reqId', () => {
+  return null
+})
+
+const cellSize = useState('cellSize', () => {
+  return 0
+})
 
 onMounted(() => {
     wrapper = document.querySelector('.hl-main')
@@ -61,7 +78,8 @@ function setupCells() {
     }
     
     nextTick(() => {
-        cellSize = (wrapper.getBoundingClientRect().width - numColumns.value) / numColumns.value
+        cellSize.value = (wrapper.getBoundingClientRect().width - numColumns.value) / numColumns.value
+        console.log(cellSize.value);
         cells.value.forEach(element => element.addEventListener('click', onCellClick))
     })
 }
@@ -125,7 +143,7 @@ function goFullscreen(cell) {
     }, 0)
 
     tl.to(wrapper, {
-        scrollTop: cellSize * cell.row + cell.row,
+        scrollTop: cellSize.value * cell.row + cell.row,
         duration: duration,
         ease: ease,
     }, 0)

@@ -15,7 +15,7 @@
                 controls
                 loop
                 crossorigin="anonymous"
-                id="audio"
+                :id="`audio-${item.songData.file}`"
                 ref="audio"
                 :src="`sounds/${item.songData.file}`"
             ></audio>
@@ -35,6 +35,8 @@
 </template>
 
 <script setup>
+import * as Medya from 'meyda';
+
 const props = defineProps({
     index: {
         type: Number,
@@ -48,6 +50,7 @@ const props = defineProps({
 
 const audio = ref(null)
 const itemElement = ref(null)
+const signals = useState('signals')
 
 onMounted(() => {
     itemElement.value.addEventListener('click', playSound)
@@ -56,10 +59,17 @@ onMounted(() => {
 function playSound() {
     audio.value.play()
     itemElement.value.removeEventListener('click', playSound)
+
+    signalsCapture(
+      props.item.canvas,
+      `audio-${props.item.songData.file}`
+    );
 }
 
 function stopSound() {
     audio.value.pause()
+    signals.value.id = 0
+
     setTimeout(() => itemElement.value.addEventListener('click', playSound))
 }
 </script>

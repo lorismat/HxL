@@ -46,3 +46,9 @@
         }
     }
 }
+
+// extra addition to always keep the canvas in the center
+.hl-item__main {
+  display: flex;
+  justify-content: center;
+}

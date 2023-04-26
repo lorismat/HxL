@@ -34,11 +34,7 @@ import * as Medya from 'meyda';
 const playerText = ref('play');
 const userAction = ref(0); // init value for conditional trigger of the sound
 
-const signals = useState('signals', () => {
-  return {
-    arrSize: 128,
-  }
-}); 
+
 
 const cv = useState('cv', () => {
   return 1;

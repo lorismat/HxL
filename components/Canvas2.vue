@@ -26,7 +26,6 @@ const debug = true;
 let change0 = 0;
 let change1 = 0;
 let change2 = 0;
-
 let inc = [0, 0, 0];
 
 function init() {
