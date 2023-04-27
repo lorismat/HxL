@@ -1,60 +1,37 @@
 <template>
-  <div>
-    <canvas :id="props.id"></canvas>
-  </div>
+  <canvas :id="props.canvasId"></canvas>
 </template>
 
 <script setup>
 import * as THREE from 'three';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const props = defineProps({
-  id: {
+  canvasId: {
     type: String,
-    required: true
+    default: `canvas-2`
   }
-});
+})
 
-let stats;
 let scene, renderer, camera, canvas, mesh;
 
-const reqID = useState('reqID');
+const reqId = useState('reqId');
 const signals = useState('signals');
-const debug = true;
+const cellSize = useState('cellSize');
 
-let change0 = 0;
-let change1 = 0;
-let change2 = 0;
+let change0 = 2;
+let change1 = 0.1;
+let change2 = 0.75;
 let inc = [0, 0, 0];
 
 function init() {
+  
+  /* unchanged block, see utils */
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(
-    70,
-    window.innerWidth / window.innerHeight,
-    1,
-    3000
-  );
+  canvas = document.getElementById(props.canvasId);
+  camera = initCamera(scene);
+  renderer = initRenderer(canvas, window, cellSize);
 
-  canvas = document.getElementById(props.id);
-  renderer = new THREE.WebGLRenderer({ antialias : true, canvas });
-  renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize(window.innerWidth, window.innerHeight);
-
-  renderer.setClearColor(0x000000, 1.);
-
-  camera.position.set(0,0,1000);
-  camera.lookAt( scene.position );
-
-  stats = new Stats();
-  if (debug) {
-    stats.domElement.classList.add('debug');
-    stats.domElement.id = 'stats';
-    stats.domElement.style.cssText = 'position:absolute;top:400px;left:80px;';
-    document.body.appendChild(stats.domElement);
-  }
-
+  const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
   const material = new THREE.ShaderMaterial({
     uniforms: {
       fArray: { value: new Float32Array(signals.value.arrSize) },
@@ -143,37 +120,21 @@ function init() {
     `,
   });
 
-  const geometry = new THREE.PlaneGeometry(1000, 1000, 32, 32);
+  
   mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
+  renderer.render(scene, camera);
 
-  if (debug) {
-    const effectController = {
-      change0: 2,
-      change1: 0.1,
-      change2: 0.75,
-    };
-    const matChanger = function ( ) {
-      change0 = effectController.change0;
-      change1 = effectController.change1;
-      change2 = effectController.change2;
-    }
-    const gui = new GUI();
-    gui.domElement.id = 'gui';
-    gui.add( effectController, 'change0', 0, 10, 0.01 ).onChange( matChanger );
-    gui.add( effectController, 'change1', 0, 10, 0.01 ).onChange( matChanger );
-    gui.add( effectController, 'change2', 0, 10, 0.01 ).onChange( matChanger );
-    matChanger();
-  }
-  
 }
 
 function animate() {
-  reqID.value = requestAnimationFrame(animate);
+  reqId.value = requestAnimationFrame(animate);
   renderer.render(scene, camera);
-  stats.update();
 
-  if (signals.value.rms != undefined && signals.value.rms > 0) {
+  if (signals.value != undefined 
+      && signals.value.id == props.canvasId
+      && signals.value.rms > 0) {
+
     const fArray = signals.value.powerSpectrum;
     for (let i = 0; i < fArray.length; i++) {
       fArray[i] = Math.abs(fArray[i]);
@@ -206,21 +167,36 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+
 onMounted(() => {
-
-  if (reqID.value != undefined && reqID.value != 0) {
-    cancelAnimationFrame(reqID.value);
-    if (document.getElementById("stats") != undefined) {
-      const stats = document.getElementById("stats");
-      const gui = document.getElementById("gui");
-      stats.remove();
-      gui.remove();
-    }
-  }
-
-  window.addEventListener("resize", onWindowResize);
   init();
-  animate();
+  canvasSize('small', canvas);  
+})
+
+watch(() => signals.value.id, (newValue, oldValue) => {
+  canvasSize('small', canvas);
+
+  if (reqId.value != undefined && reqId.value != 0) {
+    cancelAnimationFrame(reqId.value);
+  }
+  init();
+
+  if (signals.value.id == props.canvasId) {
+    setTimeout(() => {
+      onWindowResize(camera, renderer, cellSize)
+      canvasSize('big', canvas, renderer, camera);
+      animate();
+    }, 0);
+  }
+})
+
+watch(() => cellSize.value, (newValue, oldValue) => {
+  init();
+  window.addEventListener('resize', () => {
+    onWindowResize(camera, renderer, cellSize);
+    canvasSize('big', canvas, renderer, camera);
+  });
+
 })
 
 </script>

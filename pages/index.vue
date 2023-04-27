@@ -2,17 +2,23 @@
   <Pointer :text="playerText" />
   <IndexTable />
   
-  <main>    
-    <Canvas1 v-if="cv == 1" @click="triggerSound" id="c-3843920043893" />
-    <Canvas2 v-if="cv == 2" @click="triggerSound" id="c-4754729020181" />
-    <Canvas3 v-if="cv == 3" @click="triggerSound" id="c-4858930288500" />
-    <Canvas4 v-if="cv == 4" @click="triggerSound" id="c-8588993995054" />
-    <Canvas5 v-if="cv == 5" @click="triggerSound" id="c-9000003294835" />
-    <Canvas6 v-if="cv == 6" @click="triggerSound" id="c-8475923298212" />
-    <Canvas7 v-if="cv == 7" @click="triggerSound" id="c-649204859568" />
-    <Canvas8 v-if="cv == 8" @click="triggerSound" id="c-7685438291028" />
-    <Canvas9 v-if="cv == 9" @click="triggerSound" id="c-8593847103947" />
-    <Canvas10 v-if="cv == 10" @click="triggerSound" id="c-473201284953" />
+  <main>  
+ 
+    <!-- 
+
+      <CanvasCanvas1 v-if="cv == 1" @click="triggerSound" id="c-3843920043893" />
+    <CanvasCanvas2 v-if="cv == 2" @click="triggerSound" id="c-4754729020181" />
+    <CanvasCanvas3 v-if="cv == 3" @click="triggerSound" id="c-4858930288500" />
+    <CanvasCanvas4 v-if="cv == 4" @click="triggerSound" id="c-8588993995054" />
+    <CanvasCanvas5 v-if="cv == 5" @click="triggerSound" id="c-9000003294835" />
+    <CanvasCanvas6 v-if="cv == 6" @click="triggerSound" id="c-8475923298212" />
+    <CanvasCanvas7 v-if="cv == 7" @click="triggerSound" id="c-649204859568" />
+    <CanvasCanvas8 v-if="cv == 8" @click="triggerSound" id="c-7685438291028" />
+    <CanvasCanvas9 v-if="cv == 9" @click="triggerSound" id="c-8593847103947" />
+    <CanvasCanvas10 v-if="cv == 10" @click="triggerSound" id="c-473201284953" />
+
+    -->
+    
     
     <!--
       b7 / 

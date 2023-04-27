@@ -51,7 +51,7 @@ const reqId = useState('reqId', () => {
 })
 
 const cellSize = useState('cellSize', () => {
-  return 0
+  return 100
 })
 
 onMounted(() => {
@@ -79,7 +79,6 @@ function setupCells() {
     
     nextTick(() => {
         cellSize.value = (wrapper.getBoundingClientRect().width - numColumns.value) / numColumns.value
-        console.log(cellSize.value);
         cells.value.forEach(element => element.addEventListener('click', onCellClick))
     })
 }

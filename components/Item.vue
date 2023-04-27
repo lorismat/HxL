@@ -7,7 +7,7 @@
         </div>
 
         <div class="hl-item__main">
-            <Canvas :canvasId="item.canvas" />
+            <Canvas :canvasId="`canvas-${item.canvas}`" />
 
             <audio
                 v-if="item.songData.file"
@@ -68,7 +68,7 @@ function playSound() {
 
 function stopSound() {
     audio.value.pause()
-    signals.value.id = 0
+    signals.value.id = null
 
     setTimeout(() => itemElement.value.addEventListener('click', playSound))
 }

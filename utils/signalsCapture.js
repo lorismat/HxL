@@ -1,7 +1,12 @@
 export const signalsCapture = (id, canvasId) => {
   // alert(id)
   const signals = useState('signals')
-  signals.value.id = id;
+
+  console.log('signals from capturing',signals.value.id)
+  
+  signals.value.id = `canvas-${id}`;
+
+  console.log('signals from capturing',signals.value.id)
 
   // fetching signals
   const audioContext = new AudioContext();
