@@ -27,12 +27,12 @@ const reqId = useState('reqId');
 // let inc = coreCanvas(props.canvasId).inc;
 
 
+// let spectralSpreadFactor = coreCanvas(props.canvasId).spectralSpreadFactor;
 let spectralSpreadFactor = 16;
 let change0 = 0;
 let change1 = 0;
 let change2 = 0;
 let inc = 0;
-
 
 function init() {
   

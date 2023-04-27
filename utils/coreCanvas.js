@@ -1,19 +1,52 @@
-import canvas1 from './canvas/canvas1';
-import canvas2 from './canvas/canvas2';
-import canvas3 from './canvas/canvas3';
-import canvas4 from './canvas/canvas4';
-
+import mainClass from './canvas/mainClass';
 
 
 export const coreCanvas = (id) => {
   if (id == 1) {
-    canvas1();
+    const cv1 = new mainClass(
+      id, 
+      16
+    );
+    cv1.intro();
+    return cv1
   } else if (id == 2) {
-    canvas2();
+    const cv2 = new mainClass(
+      id, 
+      0
+    );
+    cv2.intro();
+    return cv2
   } else if (id == 3) {
-    canvas3();
+    const cv3 = new mainClass(
+      id, 
+      0
+    );
+    cv3.intro();
+    return cv3
   } else if (id == 4) {
-    canvas4();
+    const cv4 = new mainClass(
+      id, 
+      0
+    );
+    cv4.intro();
+    return cv4
+  } else if (id == 5) {
+    const cv4 = new mainClass(
+      id, 
+      0
+    );
+    cv5.intro();
+    return cv5
+  } else if (id == 6) {
+    const cv6 = new mainClass(
+      id, 
+      0
+    );
+    cv6.intro();
+    return cv6
   }
-  return
+
+
+
+
 }
