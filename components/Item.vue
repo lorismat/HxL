@@ -3,11 +3,11 @@
         <div class="hl-item__top">
             <span class="hl-item__index hide-on-fullscreen">{{ pad(index, 2) }}</span>
             <IconPlay class="hide-on-fullscreen"/>
-            <button class="hl-close-btn" @click="stopSound">Close</button>
+            <button class="hl-close-btn" @click="stop">Close</button>
         </div>
 
         <div class="hl-item__main">
-            <Canvas :canvasId="`canvas-${item.canvas}`" />
+            <Canvas :canvasId="`canvas-${item.id}`" />
 
             <audio
                 v-if="item.songData.file"
@@ -35,7 +35,8 @@
 </template>
 
 <script setup>
-import * as Medya from 'meyda';
+// TODO: Refactor component to listen global itemActive
+const itemActive = useState('itemActive');
 
 const props = defineProps({
     index: {
@@ -45,7 +46,11 @@ const props = defineProps({
     item: {
         type: Object,
         default: null
-    }
+    },
+    active: {
+        type: Boolean,
+        default: false
+    },
 })
 
 const audio = ref(null)
@@ -53,23 +58,24 @@ const itemElement = ref(null)
 const signals = useState('signals')
 
 onMounted(() => {
-    itemElement.value.addEventListener('click', playSound)
+    itemElement.value.addEventListener('click', play)
 })
 
-function playSound() {
+function play() {
     audio.value.play()
-    itemElement.value.removeEventListener('click', playSound)
+    itemElement.value.removeEventListener('click', play)
 
     signalsCapture(
-      props.item.canvas,
+      props.item.id,
       `audio-${props.item.songData.file}`
     );
 }
 
-function stopSound() {
+function stop() {
     audio.value.pause()
     signals.value.id = null
 
-    setTimeout(() => itemElement.value.addEventListener('click', playSound))
+    setTimeout(() => itemElement.value.addEventListener('click', play))
 }
+
 </script>

@@ -1,3 +1,5 @@
+import * as Meyda from 'meyda';
+
 export const signalsCapture = (id, canvasId) => {
   // alert(id)
   const signals = useState('signals')

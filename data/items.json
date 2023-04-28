@@ -1,6 +1,6 @@
 [
     { 
-        "canvas": 1,
+        "id": 1,
         "songData": {
             "file": "/nicolas-jaar/America-I-m-for-the-Birds.mp3",
             "song": "America I'm for the birds",
@@ -9,7 +9,7 @@
         "comingsoon": false
     },
     { 
-        "canvas": 2,
+        "id": 2,
         "songData": {
             "file": "/nicolas-jaar/Fight.mp3",
             "song": "Fight",
@@ -18,7 +18,7 @@
         "comingsoon": false
     },
     { 
-        "canvas": 3,
+        "id": 3,
         "songData": {
             "file": "/nicolas-jaar/I-Got-a.mp3",
             "song": "I got a",
@@ -30,7 +30,7 @@
     {},
     {},
     { 
-        "canvas": 4,
+        "id": 4,
         "songData": {
             "file": "/nicolas-jaar/Leaves.mp3",
             "song": "Leaves",
@@ -39,7 +39,7 @@
         "comingsoon": false
     },
     { 
-        "canvas": 5,
+        "id": 5,
         "songData": {
             "file": "/nicolas-jaar/Mi-Mujer.mp3",
             "song": "Mi Mujer",
@@ -48,7 +48,7 @@
         "comingsoon": true
     },
     { 
-        "canvas": 6,
+        "id": 6,
         "songData": {
             "file": "/nicolas-jaar/No-one-is-looking-at-U.mp3",
             "song": "No one is looking at you",

@@ -8,7 +8,6 @@
       <CanvasCanvas4 v-if="props.canvasId === 4" :id="`canvas-${props.canvasId}`"  />
     -->
     
-    
   </div>
 </template>
 

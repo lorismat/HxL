@@ -134,11 +134,13 @@ watch(() => signals.value.id, (newValue, oldValue) => {
 
 watch(() => cellSize.value, (newValue, oldValue) => {
   init();
+  console.log('cell changed');
+  console.log(oldValue + ', ' + newValue);
+
   window.addEventListener('resize', () => {
     onWindowResize(camera, renderer, cellSize);
     canvasSize('big', canvas, renderer, camera);
   });
-
 })
 
 </script>

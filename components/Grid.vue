@@ -31,12 +31,13 @@ import items from '@/data/items.json'
 let wrapper = null
 let storedScroll = 0
 
-
-
 const numColumns = ref(0)
 const numRows = ref(0)
 const rows = ref([])
 const cells = ref([])
+
+// TODO: Set active item on active cells
+const activeItem = useState('activeItem', () => 0)
 
 // init signals captured in Item / to move in Setup?
 const signals = useState('signals', () => {
